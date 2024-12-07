@@ -44,3 +44,6 @@ routes:
 
   range: [0, 1]
   step: 100
+
+server:
+  ticker: 1s

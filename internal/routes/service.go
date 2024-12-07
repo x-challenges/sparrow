@@ -10,7 +10,10 @@ import (
 )
 
 // Service
-type Service interface{}
+type Service interface {
+	// Range
+	Range(ctx context.Context) Iterator
+}
 
 // Service interface implementation
 type service struct {
@@ -34,6 +37,16 @@ func newService(logger *zap.Logger, instruments instruments.Service, config *Con
 
 // Start
 func (s *service) Start(ctx context.Context) error {
+	return s.load(ctx)
+}
+
+// Stop
+func (s *service) Stop(context.Context) error {
+	return nil
+}
+
+// Load
+func (s *service) load(ctx context.Context) error {
 	var (
 		allInstruments instruments.Instruments
 		err            error
@@ -96,5 +109,7 @@ func (s *service) Start(ctx context.Context) error {
 	return nil
 }
 
-// Stop
-func (s *service) Stop(context.Context) error { return nil }
+// Range implements Service interface
+func (s *service) Range(context.Context) Iterator {
+	return s.pool.Range()
+}

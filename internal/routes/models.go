@@ -1,15 +1,19 @@
 package routes
 
 import (
+	"iter"
 	"math/big"
 
 	"sparrow/internal/instruments"
 )
 
+// Iterator
+type Iterator iter.Seq[*Route]
+
 // Route
 type Route struct {
-	prevRoute *Route
 	nextRoute *Route
+	// prevRoute *Route
 
 	// instruments
 	Base  *instruments.Instrument
@@ -69,4 +73,31 @@ func (p *Pool) AddRoute(route *Route) {
 
 	// add route to index
 	p.index = append(p.index, route)
+}
+
+// Range
+func (p *Pool) Range() Iterator {
+	return func(yield func(*Route) bool) {
+		for _, rp := range p.priority {
+			var current = rp.head
+
+			for {
+				if !yield(current) {
+					return
+				}
+
+				// exist if end of linked list
+				if current == rp.tail {
+					break
+				}
+
+				// exit if next route empty
+				if current.nextRoute == nil {
+					break
+				}
+
+				current = current.nextRoute
+			}
+		}
+	}
 }

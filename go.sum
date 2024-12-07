@@ -77,8 +77,8 @@ github.com/valyala/bytebufferpool v1.0.0 h1:GqA5TC/0021Y/b9FG4Oi9Mr3q7XYx6Kllzaw
 github.com/valyala/bytebufferpool v1.0.0/go.mod h1:6bBcMArwyJ5K/AmCkWv1jt77kVWyCJ6HpOuEn7z0Csc=
 github.com/valyala/fasthttp v1.57.0 h1:Xw8SjWGEP/+wAAgyy5XTvgrWlOD1+TxbbvNADYCm1Tg=
 github.com/valyala/fasthttp v1.57.0/go.mod h1:h6ZBaPRlzpZ6O3H5t2gEk1Qi33+TmLvfwgLLp0t9CpE=
-github.com/x-challenges/raven v0.1.12 h1:5KC4p6GRoZoGdQOWoRgVuoNF1DVydhDdmoFaBsbTPS8=
-github.com/x-challenges/raven v0.1.12/go.mod h1:f6Sza2GGxSc1f0DhitNccIAJR72lfNce6OgpQ/683G4=
+github.com/x-challenges/raven v0.1.14 h1:pElKuIbz5QO4IhZVA8+P8vMugZx1XtjyLuK/UGLCxNA=
+github.com/x-challenges/raven v0.1.14/go.mod h1:f6Sza2GGxSc1f0DhitNccIAJR72lfNce6OgpQ/683G4=
 github.com/xyproto/randomstring v1.0.5 h1:YtlWPoRdgMu3NZtP45drfy1GKoojuR7hmRcnhZqKjWU=
 github.com/xyproto/randomstring v1.0.5/go.mod h1:rgmS5DeNXLivK7YprL0pY+lTuhNQW3iGxZ18UQApw/E=
 go.uber.org/dig v1.18.0 h1:imUL1UiY0Mg4bqbFfsRQO5G4CGRBec/ZujWTvSVp3pw=
