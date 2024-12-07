@@ -2,15 +2,18 @@ module sparrow
 
 go 1.23.4
 
-replace github.com/x-challenges/raven => ../../raven
+// replace github.com/x-challenges/raven => ../../raven
 
-require github.com/x-challenges/raven v0.1.11
+require github.com/x-challenges/raven v0.1.12
 
 require (
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc
 	github.com/joho/godotenv v1.5.1
+	github.com/puzpuzpuz/xsync/v3 v3.4.0
 	github.com/spf13/cobra v1.8.1
+	github.com/valyala/fasthttp v1.57.0
 	go.uber.org/fx v1.23.0
+	go.uber.org/zap v1.27.0
 )
 
 require (
@@ -37,10 +40,8 @@ require (
 	github.com/spf13/viper v1.19.0 // indirect
 	github.com/subosito/gotenv v1.6.0 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
-	github.com/valyala/fasthttp v1.57.0 // indirect
 	go.uber.org/dig v1.18.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
-	go.uber.org/zap v1.27.0 // indirect
 	golang.org/x/crypto v0.29.0 // indirect
 	golang.org/x/exp v0.0.0-20241108190413-2d47ceb2692f // indirect
 	golang.org/x/net v0.31.0 // indirect

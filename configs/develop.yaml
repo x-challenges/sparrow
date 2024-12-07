@@ -2,3 +2,45 @@ debug: false
 
 logger:
   level: info
+
+fasthttp:
+  client: {}
+
+jupyter:
+  price:
+    api_host: https://api.jup.ag/price/v2
+
+  quote:
+    api_host: https://api.jup.ag/price/v2
+
+instruments:
+  pool:
+    - ticker: sol
+      address: So11111111111111111111111111111111111111112
+
+    - ticker: usdt
+      address: Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB
+
+    - ticker: usdc
+      address: EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v
+
+    - ticker: jup
+      address: JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN
+
+    - ticker: jlp
+      address: 27G8MtK7VtTcCHkpASjSDdkWWYfoqT6ggEuKidVJidD4
+
+    - ticker: bonk
+      address: DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263
+
+    - ticker: pepe
+      address: B5WTLaRwaUQpKk7ir1wniNB6m5o8GgMrimhKMYan2R6B
+
+routes:
+  base_ccy:
+    - So11111111111111111111111111111111111111112 # sol
+    - Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB # usdt
+    - EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v # usdc
+
+  range: [0, 1]
+  step: 100

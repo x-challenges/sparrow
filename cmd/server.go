@@ -7,6 +7,8 @@ import (
 	"github.com/x-challenges/raven/modules/config"
 	"github.com/x-challenges/raven/modules/fasthttp"
 	"github.com/x-challenges/raven/modules/logger"
+
+	"sparrow/apps/server"
 )
 
 var serverCmd = &cobra.Command{
@@ -19,6 +21,9 @@ var serverCmd = &cobra.Command{
 			config.Module(),
 			logger.Module,
 			fasthttp.Module,
+
+			// apps
+			server.Module,
 		)
 
 		// run app
