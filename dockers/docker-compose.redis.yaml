@@ -1,0 +1,16 @@
+volumes:
+  redis_data:
+
+x-common-base: &common-base
+  restart: always
+  networks:
+    - backend
+
+services:
+  redis:
+    <<: *common-base
+    image: redis:${REDIS_TAG:-7-alpine}
+    ports:
+      - 6379:6379
+    volumes:
+      - redis_data:/data

@@ -1,0 +1,13 @@
+name: viper
+
+networks:
+  backend:
+    driver: bridge
+    external: false
+    name: backend
+
+include:
+  - path:
+    - docker-compose.base.yaml
+    - docker-compose.tools.yaml
+    - docker-compose.redis.yaml

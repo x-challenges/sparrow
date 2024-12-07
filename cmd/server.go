@@ -1,0 +1,31 @@
+package cmd
+
+import (
+	"github.com/spf13/cobra"
+	"go.uber.org/fx"
+
+	"github.com/x-challenges/raven/modules/config"
+	"github.com/x-challenges/raven/modules/fasthttp"
+	"github.com/x-challenges/raven/modules/logger"
+)
+
+var serverCmd = &cobra.Command{
+	Use: "server",
+	Run: func(_ *cobra.Command, _ []string) {
+		app := fx.New(
+			fx.RecoverFromPanics(),
+
+			// raven
+			config.Module(),
+			logger.Module,
+			fasthttp.Module,
+		)
+
+		// run app
+		app.Run()
+	},
+}
+
+func init() {
+	rootCmd.AddCommand(serverCmd)
+}
