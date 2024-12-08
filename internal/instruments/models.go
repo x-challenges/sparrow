@@ -1,28 +1,14 @@
 package instruments
 
-// Status
-type Status = string
-
-const (
-	Active   Status = "ACTIVE"
-	InActive Status = "INACTIVE"
-)
-
 // Instrument
 type Instrument struct {
-	Ticker  string `json:"ticker" validate:"required"`
-	Status  Status `json:"status" validate:"required"`
-	Address string `json:"address" validate:"required"`
+	Address  string `json:"address" validate:"required"`
+	Ticker   string `json:"ticker" validate:"required"`
+	Decimals int64  `json:"decimals" validate:"required"`
 }
 
-// NewInstrument
-func NewInstrument(ticker, address string) *Instrument {
-	return &Instrument{
-		Ticker:  ticker,
-		Status:  Active,
-		Address: address,
-	}
-}
+// Amount
+func (i *Instrument) Amount(amount int64) int64 { return amount * i.Decimals }
 
 // Instruments
 type Instruments []*Instrument

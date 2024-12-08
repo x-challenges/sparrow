@@ -11,30 +11,40 @@ jupyter:
     api_host: https://api.jup.ag/price/v2
 
   quote:
-    api_host: https://api.jup.ag/price/v2
+    api_host: https://quote-api.jup.ag/v6/quote
+
+  token:
+    api_host: https://tokens.jup.ag/token
 
 instruments:
   pool:
     - ticker: sol
       address: So11111111111111111111111111111111111111112
+      decimals: 9
 
     - ticker: usdt
       address: Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB
+      decimals: 6
 
     - ticker: usdc
       address: EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v
+      decimals: 6
 
     - ticker: jup
       address: JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN
+      decimals: 6
 
     - ticker: jlp
       address: 27G8MtK7VtTcCHkpASjSDdkWWYfoqT6ggEuKidVJidD4
+      decimals: 6
 
     - ticker: bonk
       address: DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263
+      decimals: 5
 
     - ticker: pepe
       address: B5WTLaRwaUQpKk7ir1wniNB6m5o8GgMrimhKMYan2R6B
+      decimals: 6
 
 routes:
   range: [0, 1]

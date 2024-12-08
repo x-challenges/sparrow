@@ -37,10 +37,11 @@ func newRepository(logger *zap.Logger, config *Config) (*repository, error) {
 			instrument.Address,
 
 			// data
-			NewInstrument(
-				instrument.Ticker,
-				instrument.Address,
-			),
+			&Instrument{
+				Address:  instrument.Address,
+				Ticker:   instrument.Ticker,
+				Decimals: instrument.Decimals,
+			},
 		)
 	}
 
