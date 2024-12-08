@@ -3,10 +3,12 @@ package server
 import (
 	"context"
 	"sync"
-	"time"
 
+	"github.com/alitto/pond/v2"
+	"go.uber.org/fx"
 	"go.uber.org/zap"
 
+	"sparrow/internal/block"
 	"sparrow/internal/jupyter"
 	"sparrow/internal/routes"
 )
@@ -14,8 +16,10 @@ import (
 // Server
 type Server struct {
 	logger  *zap.Logger
+	pool    pond.Pool
 	jupyter jupyter.Client
 	routes  routes.Service
+	blocks  block.Listener
 
 	config *Config
 
@@ -23,14 +27,27 @@ type Server struct {
 	done *sync.WaitGroup
 }
 
-// NewServer
-func NewServer(logger *zap.Logger, jupyter jupyter.Client, routes routes.Service, config *Config) *Server {
-	return &Server{
-		logger:  logger,
-		jupyter: jupyter,
-		routes:  routes,
+// NewServerFx
+type NewServerFx struct {
+	fx.In
 
-		config: config,
+	Logger  *zap.Logger
+	Jupyter jupyter.Client
+	Routes  routes.Service
+	Blocks  block.Service
+
+	Config *Config
+}
+
+// NewServer
+func NewServer(p NewServerFx) *Server {
+	return &Server{
+		logger:  p.Logger,
+		jupyter: p.Jupyter,
+		routes:  p.Routes,
+		blocks:  p.Blocks.Subscribe(),
+
+		config: p.Config,
 
 		stop: make(chan struct{}),
 		done: &sync.WaitGroup{},
@@ -39,25 +56,23 @@ func NewServer(logger *zap.Logger, jupyter jupyter.Client, routes routes.Service
 
 // Start
 func (s *Server) Start(ctx context.Context) error {
-	s.done.Add(1)
+	s.pool = pond.NewPool(s.config.Server.Concurrency,
+		pond.WithContext(ctx),
+	)
 
+	s.done.Add(1)
 	go func() {
 		defer s.done.Done()
-
-		var ticker = time.NewTicker(s.config.Server.Ticker)
 
 		for {
 			select {
 			case <-s.stop:
 				return
 
-			case t := <-ticker.C:
-				s.logger.Info("tick", zap.Time("time", t))
-
-				s.Process(ctx)
+			case block := <-s.blocks.Updates():
+				s.Process(ctx, block)
 			}
 		}
-
 	}()
 
 	return nil
@@ -76,12 +91,21 @@ func (s *Server) Stop(context.Context) error {
 }
 
 // Process
-func (s *Server) Process(context.Context) {
-	for route := range s.routes.Range(context.Background()) {
-		s.logger.Info("route",
-			zap.String("base", route.Base.Ticker),
-			zap.String("quote", route.Quote.Ticker),
-			zap.String("amount", route.Amount.FloatString(5)),
-		)
+func (s *Server) Process(ctx context.Context, _ *block.Block) {
+	var (
+		groupCtx, cancel = context.WithTimeout(ctx, s.config.Server.Deadline)
+		group            = s.pool.NewGroupContext(groupCtx)
+		err              error
+	)
+	defer cancel()
+
+	// iterate by routes
+	for range s.routes.Range(context.Background()) {
+		group.Submit()
+	}
+
+	// wait group
+	if err = group.Wait(); err != nil {
+		s.logger.Error("group task failed", zap.Error(err))
 	}
 }
