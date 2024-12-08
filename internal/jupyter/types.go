@@ -29,7 +29,7 @@ type QuoteRoutePlan struct {
 // Quote
 type Quote struct {
 	InputMint  string           `json:"inputMint"`
-	InAmount   int64            `json:"inAmont,string"`
+	InAmount   int64            `json:"inAmount,string"`
 	OutputMint string           `json:"outputMint"`
 	OutAmount  int64            `json:"outAmount,string"`
 	RoutePlan  []QuoteRoutePlan `json:"routePlan"`
@@ -42,7 +42,13 @@ type Quotes struct {
 	Reverse *Quote `json:"reverse"`
 }
 
-// HasProfit
-func (q *Quotes) HasProfit() bool {
-	return q.Direct.InAmount < q.Reverse.OutAmount
+// Profit
+func (q *Quotes) Profit() (float32, bool) {
+	var yes = q.Direct.InAmount < q.Reverse.OutAmount
+
+	if yes {
+		return (1.0 - float32(q.Direct.InAmount)/float32(q.Reverse.OutAmount)) * 100.0, true
+	}
+
+	return 0, false
 }

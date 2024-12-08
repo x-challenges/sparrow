@@ -1,6 +1,7 @@
 package jupyter
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"net/http"
@@ -33,6 +34,8 @@ type client struct {
 	logger *zap.Logger
 	client *fasthttp.Client
 	config *Config
+
+	quoteHosts *Balancer
 }
 
 var _ Client = (*client)(nil)
@@ -40,9 +43,10 @@ var _ Client = (*client)(nil)
 // NewClient
 func newClient(logger *zap.Logger, fclient *fasthttp.Client, config *Config) (*client, error) {
 	return &client{
-		logger: logger,
-		client: fclient,
-		config: config,
+		logger:     logger,
+		client:     fclient,
+		config:     config,
+		quoteHosts: NewBalancer(config.Jupyter.Quote.Hosts...),
 	}, nil
 }
 
@@ -58,7 +62,8 @@ func (c *client) Token(_ context.Context, address string) (*Token, error) {
 	defer fasthttp.ReleaseRequest(req)
 	defer fasthttp.ReleaseResponse(res)
 
-	req.SetRequestURI(c.config.Jupyter.Token.APIHost + "/" + address)
+	req.SetRequestURI(c.config.Jupyter.Token.Host + "/" + address)
+	req.Header.Set("Connection", "keep-alive")
 
 	// do request
 	if err = c.client.Do(req, res); err != nil {
@@ -100,14 +105,16 @@ func (c *client) Quote(_ context.Context, input, output *instruments.Instrument,
 	uri.Grow(256)
 
 	// write host
-	_, _ = uri.WriteString(c.config.Jupyter.Quote.APIHost)
+	_, _ = uri.WriteString(c.quoteHosts.Next())
 
 	// write params
 	_, _ = uri.WriteString("?inputMint=" + url.QueryEscape(input.Address))
 	_, _ = uri.WriteString("&outputMint=" + url.QueryEscape(output.Address))
-	_, _ = uri.WriteString("&amount=" + url.QueryEscape(strconv.FormatInt(input.Amount(amount), 10)))
+	_, _ = uri.WriteString("&amount=" + url.QueryEscape(strconv.FormatInt(amount, 10)))
 
 	req.SetRequestURI(uri.String())
+	req.Header.SetMethod(fasthttp.MethodGet)
+	req.Header.Set("Connection", "keep-alive")
 
 	// do request
 	if err = c.client.Do(req, res); err != nil {
@@ -120,7 +127,7 @@ func (c *client) Quote(_ context.Context, input, output *instruments.Instrument,
 	}
 
 	// parse json
-	if err = json.NewDecoder(req.BodyStream()).Decode(&quote); err != nil {
+	if err = json.NewDecoder(bytes.NewBuffer(res.Body())).Decode(&quote); err != nil {
 		return nil, err
 	}
 
@@ -141,10 +148,9 @@ func (c *client) Quotes(ctx context.Context, input, output *instruments.Instrume
 		return nil, err
 	}
 
-	// calculate output amount for api
-	amount = output.Amount(quotes.Direct.OutAmount)
-
 	// take reverse quotes
+	amount = quotes.Direct.OutAmount
+
 	if quotes.Reverse, err = c.Quote(ctx, output, input, amount); err != nil {
 		return nil, err
 	}

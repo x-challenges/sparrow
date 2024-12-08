@@ -20,7 +20,7 @@ type Route struct {
 	Quote *instruments.Instrument
 
 	// other
-	Amount   *big.Rat
+	Amount   *big.Float
 	Priority int
 }
 

@@ -12,7 +12,7 @@ import (
 // Service
 type Service interface {
 	// Range
-	Range(ctx context.Context) Iterator
+	Range() Iterator
 }
 
 // Service interface implementation
@@ -93,7 +93,7 @@ func (s *service) load(ctx context.Context) error {
 				var route = &Route{
 					Base:     base,
 					Quote:    quote,
-					Amount:   new(big.Rat).SetFloat64(float64(amount) / float64(step)),
+					Amount:   new(big.Float).SetFloat64(float64(amount) / float64(step)),
 					Priority: priority,
 				}
 
@@ -110,6 +110,6 @@ func (s *service) load(ctx context.Context) error {
 }
 
 // Range implements Service interface
-func (s *service) Range(context.Context) Iterator {
+func (s *service) Range() Iterator {
 	return s.pool.Range()
 }

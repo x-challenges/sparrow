@@ -2,6 +2,7 @@ package instruments
 
 import (
 	"context"
+	"math"
 
 	"github.com/puzpuzpuz/xsync/v3"
 	"go.uber.org/zap"
@@ -41,6 +42,7 @@ func newRepository(logger *zap.Logger, config *Config) (*repository, error) {
 				Address:  instrument.Address,
 				Ticker:   instrument.Ticker,
 				Decimals: instrument.Decimals,
+				zeros:    int64(math.Pow10(instrument.Decimals)),
 			},
 		)
 	}

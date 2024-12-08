@@ -4,17 +4,24 @@ logger:
   level: info
 
 fasthttp:
-  client: {}
+  client:
+    max_conns_per_host: 1024
+    max_conn_duration: 1m
+    max_conn_wait_timeout: 5s
+    read_timeout: 5s
+    write_timeout: 5s
 
 jupyter:
+  token:
+    host: https://tokens.jup.ag/token
+
   price:
-    api_host: https://api.jup.ag/price/v2
+    host: https://api.jup.ag/price/v2
 
   quote:
-    api_host: https://quote-api.jup.ag/v6/quote
-
-  token:
-    api_host: https://tokens.jup.ag/token
+    hosts:
+      - https://quote-api.jup.ag/v6/quote
+      - https://public.jupiterapi.com/quote
 
 instruments:
   pool:
@@ -47,8 +54,8 @@ instruments:
       decimals: 6
 
 routes:
-  range: [0, 1]
-  step: 100
+  range: [0, 2]
+  step: 1
 
   base_ccy:
     # SOL
@@ -61,10 +68,10 @@ routes:
     - EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v
 
 server:
-  concurrency: 1
+  concurrency: 3
 
   # block producer interval
-  ticker: 2s
+  ticker: 10s
 
   # timeout deadline for group task
-  deadline: 1s
+  deadline: 10s

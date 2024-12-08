@@ -10,8 +10,8 @@ import (
 	"sparrow/internal/block"
 )
 
-// BlockProducer implements block.Producer interface
-type BlockProducer struct {
+// Blocks implements block.Producer interface
+type Blocks struct {
 	logger  *zap.Logger
 	config  *Config
 	channel chan *block.Block
@@ -20,11 +20,11 @@ type BlockProducer struct {
 	done *sync.WaitGroup
 }
 
-var _ block.Producer = (*BlockProducer)(nil)
+var _ block.Producer = (*Blocks)(nil)
 
-// NewBlockProducer
-func NewBlockProducer(logger *zap.Logger, config *Config) (*BlockProducer, error) {
-	return &BlockProducer{
+// NewBlocks
+func NewBlocks(logger *zap.Logger, config *Config) (*Blocks, error) {
+	return &Blocks{
 		logger:  logger,
 		config:  config,
 		channel: make(chan *block.Block),
@@ -35,7 +35,7 @@ func NewBlockProducer(logger *zap.Logger, config *Config) (*BlockProducer, error
 }
 
 // Start implements block.Producer interface
-func (bp *BlockProducer) Start(context.Context) error {
+func (bp *Blocks) Start(context.Context) error {
 	bp.done.Add(1)
 
 	go func() {
@@ -57,7 +57,7 @@ func (bp *BlockProducer) Start(context.Context) error {
 }
 
 // Stop implements block.Producer interface
-func (bp *BlockProducer) Stop(context.Context) error {
+func (bp *Blocks) Stop(context.Context) error {
 	// send stop signal
 	close(bp.stop)
 
@@ -69,10 +69,12 @@ func (bp *BlockProducer) Stop(context.Context) error {
 }
 
 // Channel implements block.Producer interface
-func (bp *BlockProducer) Channel() block.ProducerChannel { return bp.channel }
+func (bp *Blocks) Channel() block.ProducerChannel {
+	return bp.channel
+}
 
 // Produce
-func (bp *BlockProducer) Produce(ts time.Time) {
+func (bp *Blocks) Produce(ts time.Time) {
 	var block = block.NewBlock()
 
 	defer bp.logger.Info("tick", zap.Time("time", ts), zap.Any("block", block))

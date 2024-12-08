@@ -3,16 +3,16 @@ package jupyter
 // Config
 type Config struct {
 	Jupyter struct {
+		Token struct {
+			Host string `mapstructure:"host" validate:"required"`
+		} `mapstructure:"token"`
+
 		Price struct {
-			APIHost string `mapstructure:"api_host" validate:"required"`
+			Host string `mapstructure:"host" validate:"required"`
 		} `mapstructure:"price"`
 
 		Quote struct {
-			APIHost string `mapstructure:"api_host" validate:"required"`
+			Hosts []string `mapstructure:"hosts" validate:"required"`
 		} `mapstructure:"quote"`
-
-		Token struct {
-			APIHost string `mapstructure:"api_host" validate:"required"`
-		} `mapstructure:"token"`
 	} `mapstructure:"jupyter"`
 }

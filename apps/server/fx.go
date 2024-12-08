@@ -40,11 +40,8 @@ var Module = fx.Module(
 			fx.OnStop(func(ctx context.Context, s *Server) error { return s.Stop(ctx) }),
 		),
 
-		// processor
-		fx.Annotate(newProcessor, fx.As(new(Processor))),
-
-		// block producer based on time ticker
-		fx.Annotate(NewBlockProducer, fx.As(new(block.Producer))),
+		// blocks producer based on time ticker
+		fx.Annotate(NewBlocks, fx.As(new(block.Producer))),
 	),
 
 	// force
