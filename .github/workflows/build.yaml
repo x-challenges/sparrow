@@ -13,7 +13,7 @@ env:
   COMPOSE_DOCKER_CLI_BUILD: 1
   COMPOSE_PROFILES: tools
 
-  image_path: cr.yandex/crp4jplrujjp76gba56i/default
+  image_path: cr.yandex/crp4jplrujjp76gba56i
   image_tag: develop
 
 jobs:
