@@ -12,7 +12,7 @@ type Instrument struct {
 	zeros    int64
 }
 
-// Amount
+// QFromInt64
 func (i *Instrument) QFromInt64(amount int64) int64 { return amount * i.zeros }
 
 // QFromBigFloat

@@ -9,11 +9,6 @@ import (
 	"github.com/x-challenges/raven/modules/config"
 )
 
-var (
-	start = func(ctx context.Context, s Service) error { return s.(*service).Start(ctx) }
-	stop  = func(ctx context.Context, s Service) error { return s.(*service).Stop(ctx) }
-)
-
 // ModuleName
 const ModuleName = "routes"
 
@@ -28,8 +23,8 @@ var Module = fx.Module(
 		fx.Annotate(
 			newService,
 			fx.As(new(Service)),
-			fx.OnStart(start),
-			fx.OnStop(stop),
+			fx.OnStart(func(ctx context.Context, s Service) error { return s.(*service).Start(ctx) }),
+			fx.OnStop(func(ctx context.Context, s Service) error { return s.(*service).Stop(ctx) }),
 		),
 	),
 

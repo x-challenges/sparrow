@@ -87,7 +87,7 @@ func (s *Server) Start(context.Context) error {
 				// 	s.Process(ctx, block)
 				// }()
 
-				s.Process(context.Background(), block)
+				go s.Process(context.Background(), block)
 			}
 		}
 	}()
@@ -111,40 +111,54 @@ func (s *Server) Stop(context.Context) error {
 func (s *Server) Process(ctx context.Context, block *block.Block) {
 	var (
 		groupCtx, cancel = context.WithTimeout(ctx, s.config.Server.Deadline)
-		group            = s.pool.NewGroupContext(groupCtx)
-		err              error
+		group            = s.pool.NewGroup()
 	)
 	defer cancel()
 
+	// prepare logger
+	var logger = s.logger.With(zap.String("block.id", block.ID))
+
 	// iterate by available routes
 	for route := range s.routes.Range() {
+		var (
+			input  = route.Base
+			output = route.Quote
+			amount = route.Base.QFromBigFloat(route.Amount)
+		)
+
+		// enrich logs
+		var logger = logger.With(
+			zap.String("base", input.Address),
+			zap.String("quote", output.Address),
+			zap.Int64("amount", amount),
+		)
+
+		// launch task in a group
 		group.Submit(
 			func() {
-				var quotes *jupyter.Quotes
-
 				var (
-					input  = route.Base
-					output = route.Quote
-					amount = route.Base.QFromBigFloat(route.Amount)
+					quotes *jupyter.Quotes
+					err    error
 				)
 
 				// take quotes
 				if quotes, err = s.jupyter.Quotes(groupCtx, input, output, amount); err != nil {
-					s.logger.Error("take quotes failed", zap.Error(err))
+					logger.Error("take quotes failed", zap.Error(err))
+					return
 				}
 
 				// check profit
 				if profit, yes := quotes.Profit(); yes {
-					s.logger.Info("quotes has profit", zap.String("block.id", block.ID), zap.Float32("profit", profit))
+					logger.Info("quotes has profit", zap.Float32("profit", profit))
 				}
 			},
 		)
 	}
 
 	// wait group
-	if err = group.Wait(); err != nil {
+	if err := group.Wait(); err != nil {
 		if errors.Is(err, context.Canceled) {
-			s.logger.Info("group task canceled", zap.String("block.id", block.ID))
+			logger.Info("group task canceled")
 			return
 		}
 

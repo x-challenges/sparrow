@@ -57,7 +57,6 @@ func (s *service) load(ctx context.Context) error {
 		return err
 	}
 
-	// all instruments
 	var (
 		step     = s.config.Routes.Step
 		from     = s.config.Routes.Range[0] * step
@@ -65,16 +64,16 @@ func (s *service) load(ctx context.Context) error {
 		priority = 0
 	)
 
-	// iterate based instrument
+	// iterate base instruments
 	for _, baseAddr := range s.config.Routes.BaseCcy {
 		var base *instruments.Instrument
 
-		// take base instrument
+		// take base instrument from storage
 		if base, err = s.instruments.Get(ctx, baseAddr); err != nil {
 			return err
 		}
 
-		// iterate quoted instruments
+		// iterate quote instruments
 		for _, quote := range allInstruments {
 
 			// skip
@@ -97,12 +96,13 @@ func (s *service) load(ctx context.Context) error {
 					Priority: priority,
 				}
 
+				// insert route to the pool
 				s.pool.AddRoute(route)
 			}
 		}
 	}
 
-	s.logger.Info("instruments loaded into routes pool",
+	s.logger.Info("instruments loaded into route pool",
 		zap.Int("count", len(s.pool.index)),
 	)
 
@@ -110,6 +110,4 @@ func (s *service) load(ctx context.Context) error {
 }
 
 // Range implements Service interface
-func (s *service) Range() Iterator {
-	return s.pool.Range()
-}
+func (s *service) Range() Iterator { return s.pool.Range() }

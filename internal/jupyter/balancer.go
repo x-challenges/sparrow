@@ -1,13 +1,14 @@
 package jupyter
 
 import (
-	"sync/atomic"
+	"sync"
 )
 
 // Balancer
 type Balancer struct {
 	servers []string
 	index   int32
+	mu      *sync.Mutex
 }
 
 // NewBalancer
@@ -15,12 +16,16 @@ func NewBalancer(servers ...string) *Balancer {
 	return &Balancer{
 		servers: servers,
 		index:   0,
+		mu:      &sync.Mutex{},
 	}
 }
 
 // Next
 func (b *Balancer) Next() string {
-	var index = atomic.SwapInt32(&b.index, b.index%int32(len(b.servers))) // nolint:gosec
+	b.mu.Lock()
+	defer b.mu.Unlock()
 
-	return b.servers[index]
+	b.index = (b.index + 1) % int32(len(b.servers)) // nolint:gosec
+
+	return b.servers[b.index]
 }

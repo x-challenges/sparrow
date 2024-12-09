@@ -12,18 +12,22 @@ fasthttp:
     write_timeout: 5s
 
 jupyter:
+  # token api
   token:
     host: https://tokens.jup.ag/token
 
+  # price api
   price:
     host: https://api.jup.ag/price/v2
 
+  # quote api with round-robin LB
   quote:
     hosts:
       - https://quote-api.jup.ag/v6/quote
       - https://public.jupiterapi.com/quote
 
 instruments:
+  # available instruments
   pool:
     - ticker: sol
       address: So11111111111111111111111111111111111111112
@@ -54,7 +58,10 @@ instruments:
       decimals: 6
 
 routes:
+  # amount range in route pool for each base_ccy
   range: [0, 2]
+
+  # using this step, decimals = 1000
   step: 1
 
   base_ccy:
@@ -68,7 +75,8 @@ routes:
     - EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v
 
 server:
-  concurrency: 3
+  # check quotes concurrency
+  concurrency: 2
 
   # block producer interval
   ticker: 10s

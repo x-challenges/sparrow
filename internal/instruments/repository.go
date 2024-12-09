@@ -69,13 +69,15 @@ func (rp *repository) Get(_ context.Context, address string) (*Instrument, error
 }
 
 // List implements Repository interface
-func (rp *repository) List(context.Context) (Instruments, error) {
-	var instruments Instruments
+func (rp *repository) List(_ context.Context) (Instruments, error) {
+	var instruments = Instruments{}
 
-	rp.data.Range(func(_ string, value *Instrument) bool {
-		instruments = append(instruments, value)
-		return true
-	})
+	rp.data.Range(
+		func(_ string, value *Instrument) bool {
+			instruments = append(instruments, value)
+			return true
+		},
+	)
 
 	return instruments, nil
 }
