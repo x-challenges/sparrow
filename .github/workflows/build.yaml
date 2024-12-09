@@ -19,8 +19,6 @@ env:
 jobs:
   build-app:
     runs-on: ubuntu-latest
-    outputs:
-      digest: ${{ steps.build-docker.outputs.digest }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/cache@v4

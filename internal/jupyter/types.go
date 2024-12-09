@@ -1,5 +1,9 @@
 package jupyter
 
+import (
+	"time"
+)
+
 // Token
 type Token struct {
 	Address  string `json:"address"`
@@ -28,10 +32,11 @@ type QuoteRoutePlan struct {
 
 // Quote
 type Quote struct {
-	InputMint  string           `json:"inputMint"`
-	InAmount   int64            `json:"inAmount,string"`
-	OutputMint string           `json:"outputMint"`
-	OutAmount  int64            `json:"outAmount,string"`
-	RoutePlan  []QuoteRoutePlan `json:"routePlan"`
-	TimeTaken  float32          `json:"timeTaken"`
+	InputMint   string           `json:"inputMint"`
+	InAmount    int64            `json:"inAmount,string"`
+	OutputMint  string           `json:"outputMint"`
+	OutAmount   int64            `json:"outAmount,string"`
+	RoutePlan   []QuoteRoutePlan `json:"routePlan"`
+	TimeTaken   float32          `json:"timeTaken"`
+	TimeRequest time.Time        `json:"-"`
 }

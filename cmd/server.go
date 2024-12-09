@@ -6,7 +6,9 @@ import (
 
 	"github.com/x-challenges/raven/modules/config"
 	"github.com/x-challenges/raven/modules/fasthttp"
+	"github.com/x-challenges/raven/modules/gorm"
 	"github.com/x-challenges/raven/modules/logger"
+	"github.com/x-challenges/raven/modules/yandex/ydb"
 
 	"sparrow/apps/server"
 )
@@ -21,6 +23,8 @@ var serverCmd = &cobra.Command{
 			config.Module(),
 			logger.Module,
 			fasthttp.Module,
+			gorm.Module,
+			ydb.Module,
 
 			// apps
 			server.Module,

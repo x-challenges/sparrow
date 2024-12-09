@@ -1,3 +1,7 @@
+YDB_HOST=ydb.serverless.yandexcloud.net:2135
+YDB_DATABASE=/ru-central1/b1gqfuj7kccoqo8l6vb5/etn9p8jg97l7kc7inv4u
+YDB_TOKEN=$(shell yc iam create-token)
+
 GOCMD=go
 
 .PHONY: lint test cover generate
@@ -19,3 +23,8 @@ cover: test
 
 generate:
 	${GOCMD} generate ./...
+
+migrate: .check-var-command
+	goose -dir migrations ydb \
+		"grpcs://$(YDB_HOST)/?database=$(YDB_DATABASE)&token=$(YDB_TOKEN)&go_query_mode=scripting&go_fake_tx=scripting&go_query_bind=declare,numeric" \
+		$(command) -v

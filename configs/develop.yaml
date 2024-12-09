@@ -3,6 +3,10 @@ debug: false
 logger:
   level: info
 
+ydb:
+  dsn: grpcs://ydb.serverless.yandexcloud.net:2135/?database=/ru-central1/b1gqfuj7kccoqo8l6vb5/etn9p8jg97l7kc7inv4u
+  access_token_credentials:
+
 fasthttp:
   client:
     max_conns_per_host: 1024

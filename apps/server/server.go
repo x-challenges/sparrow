@@ -17,7 +17,7 @@ import (
 // Server
 type Server struct {
 	logger *zap.Logger
-	pool   pond.Pool
+	pool   pond.ResultPool[*quotes.Quotes]
 	quotes quotes.Service
 	routes routes.Service
 	blocks block.Listener
@@ -50,7 +50,7 @@ func NewServer(p NewServerFx) *Server {
 		blocks: p.Blocks.Subscribe(),
 
 		config: p.Config,
-		pool:   pond.NewPool(p.Config.Server.Concurrency),
+		pool:   pond.NewResultPool[*quotes.Quotes](p.Config.Server.Concurrency),
 
 		stop: make(chan struct{}),
 		done: &sync.WaitGroup{},
@@ -133,7 +133,7 @@ func (s *Server) Process(ctx context.Context, block *block.Block) {
 
 		// launch task in a group
 		group.Submit(
-			func() {
+			func() *quotes.Quotes {
 				var (
 					quotes *quotes.Quotes
 					err    error
@@ -142,19 +142,29 @@ func (s *Server) Process(ctx context.Context, block *block.Block) {
 				// take quotes
 				if quotes, err = s.quotes.Quotes(groupCtx, input, output, amount); err != nil {
 					logger.Error("take quotes failed", zap.Error(err))
-					return
+					return nil
 				}
 
 				// check profit
 				if profit, yes := quotes.Profit(); yes {
 					logger.Info("quotes has profit", zap.Float32("profit", profit))
+
+					return quotes
 				}
+
+				// return only profitable quotes
+				return nil
 			},
 		)
 	}
 
 	// wait group
-	if err := group.Wait(); err != nil {
+	var (
+		stats []*quotes.Quotes
+		err   error
+	)
+
+	if stats, err = group.Wait(); err != nil {
 		switch {
 		case errors.Is(err, context.Canceled):
 			logger.Info("group task canceled")
@@ -165,9 +175,14 @@ func (s *Server) Process(ctx context.Context, block *block.Block) {
 		default:
 			logger.Error("group task failed", zap.Error(err))
 		}
-
-		return
 	}
+
+	// save stats
+	go func(stats ...*quotes.Quotes) {
+		if err = s.quotes.BatchInsert(context.Background(), stats...); err != nil {
+			logger.Error("save stats failed", zap.Error(err))
+		}
+	}(stats...)
 
 	logger.Info("process completed")
 }

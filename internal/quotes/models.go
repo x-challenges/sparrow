@@ -1,6 +1,10 @@
 package quotes
 
 import (
+	"database/sql/driver"
+
+	"github.com/x-challenges/raven/kun/model"
+
 	"sparrow/internal/jupyter"
 )
 
@@ -13,6 +17,9 @@ type Quotes struct {
 	Reverse *Quote `json:"reverse"`
 }
 
+func (q *Quotes) Scan(src interface{}) error  { return model.JSONScanner(q, src) }
+func (q Quotes) Value() (driver.Value, error) { return model.JSONValuer(q) }
+
 // Profit
 func (q *Quotes) Profit() (float32, bool) {
 	var yes = q.Direct.InAmount < q.Reverse.OutAmount
@@ -23,3 +30,12 @@ func (q *Quotes) Profit() (float32, bool) {
 
 	return 0, false
 }
+
+// Model
+type Model struct {
+	model.Base `gorm:"embedded"`
+	Quotes     Quotes `gorm:"column:quotes"`
+}
+
+// TableName
+func (Model) TableName() string { return "quotes_stat" }
