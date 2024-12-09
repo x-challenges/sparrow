@@ -1,5 +1,5 @@
 YDB_HOST=ydb.serverless.yandexcloud.net:2135
-YDB_DATABASE=/ru-central1/b1gqfuj7kccoqo8l6vb5/etn9p8jg97l7kc7inv4u
+YDB_DATABASE=/ru-central1/b1gcm11knnnopur9fil6/etn4hff7q981ib0o7mnl
 YDB_TOKEN=$(shell yc iam create-token)
 
 GOCMD=go
