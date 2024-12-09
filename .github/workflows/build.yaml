@@ -19,8 +19,6 @@ env:
 jobs:
   build-app:
     runs-on: ubuntu-latest
-    needs:
-      - test-app
     outputs:
       digest: ${{ steps.build-docker.outputs.digest }}
     steps:
