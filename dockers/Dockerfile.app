@@ -1,6 +1,6 @@
 # stage - base image
 #
-FROM golang:1.23.3 AS base
+FROM golang:1.23.4 AS base
 
 RUN apt-get -y install git make wget ca-certificates tzdata
 
