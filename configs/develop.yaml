@@ -53,10 +53,6 @@ instruments:
       address: DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263
       decimals: 5
 
-    - ticker: pepe
-      address: B5WTLaRwaUQpKk7ir1wniNB6m5o8GgMrimhKMYan2R6B
-      decimals: 6
-
 routes:
   # amount range in route pool for each base_ccy
   range: [0, 2]
@@ -76,7 +72,7 @@ routes:
 
 server:
   # check quotes concurrency
-  concurrency: 2
+  concurrency: 3
 
   # block producer interval
   ticker: 10s

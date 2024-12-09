@@ -10,17 +10,17 @@ import (
 	"go.uber.org/zap"
 
 	"sparrow/internal/block"
-	"sparrow/internal/jupyter"
+	"sparrow/internal/quotes"
 	"sparrow/internal/routes"
 )
 
 // Server
 type Server struct {
-	logger  *zap.Logger
-	pool    pond.Pool
-	jupyter jupyter.Client
-	routes  routes.Service
-	blocks  block.Listener
+	logger *zap.Logger
+	pool   pond.Pool
+	quotes quotes.Service
+	routes routes.Service
+	blocks block.Listener
 
 	config *Config
 	cancel context.CancelFunc
@@ -33,10 +33,10 @@ type Server struct {
 type NewServerFx struct {
 	fx.In
 
-	Logger  *zap.Logger
-	Jupyter jupyter.Client
-	Routes  routes.Service
-	Blocks  block.Service
+	Logger *zap.Logger
+	Quotes quotes.Service
+	Routes routes.Service
+	Blocks block.Service
 
 	Config *Config
 }
@@ -44,10 +44,10 @@ type NewServerFx struct {
 // NewServer
 func NewServer(p NewServerFx) *Server {
 	return &Server{
-		logger:  p.Logger,
-		jupyter: p.Jupyter,
-		routes:  p.Routes,
-		blocks:  p.Blocks.Subscribe(),
+		logger: p.Logger,
+		quotes: p.Quotes,
+		routes: p.Routes,
+		blocks: p.Blocks.Subscribe(),
 
 		config: p.Config,
 		pool:   pond.NewPool(p.Config.Server.Concurrency),
@@ -58,14 +58,14 @@ func NewServer(p NewServerFx) *Server {
 }
 
 // Start
-func (s *Server) Start(context.Context) error {
+func (s *Server) Start(ctx context.Context) error {
 	s.done.Add(1)
 
 	go func() {
 		defer s.done.Done()
 		defer s.pool.StopAndWait()
 
-		// var processCancel context.CancelFunc
+		var processCancel context.CancelFunc
 
 		for {
 			select {
@@ -74,20 +74,18 @@ func (s *Server) Start(context.Context) error {
 
 			case block := <-s.blocks.Updates():
 				// cancel previous tasks
-				// if processCancel != nil {
-				// 	processCancel()
-				// }
+				if processCancel != nil {
+					processCancel()
+				}
 
 				// create new context with cancelation
-				// ctx, processCancel = context.WithCancel(ctx)
+				ctx, processCancel = context.WithCancel(context.Background())
 
-				// run porcess goroutine in background
-				// go func() {
-				// 	// defer processCancel()
-				// 	s.Process(ctx, block)
-				// }()
-
-				go s.Process(context.Background(), block)
+				// run process goroutine in background
+				go func() {
+					defer processCancel()
+					s.Process(ctx, block)
+				}()
 			}
 		}
 	}()
@@ -111,7 +109,7 @@ func (s *Server) Stop(context.Context) error {
 func (s *Server) Process(ctx context.Context, block *block.Block) {
 	var (
 		groupCtx, cancel = context.WithTimeout(ctx, s.config.Server.Deadline)
-		group            = s.pool.NewGroup()
+		group            = s.pool.NewGroupContext(groupCtx)
 	)
 	defer cancel()
 
@@ -137,12 +135,12 @@ func (s *Server) Process(ctx context.Context, block *block.Block) {
 		group.Submit(
 			func() {
 				var (
-					quotes *jupyter.Quotes
+					quotes *quotes.Quotes
 					err    error
 				)
 
 				// take quotes
-				if quotes, err = s.jupyter.Quotes(groupCtx, input, output, amount); err != nil {
+				if quotes, err = s.quotes.Quotes(groupCtx, input, output, amount); err != nil {
 					logger.Error("take quotes failed", zap.Error(err))
 					return
 				}
@@ -157,11 +155,19 @@ func (s *Server) Process(ctx context.Context, block *block.Block) {
 
 	// wait group
 	if err := group.Wait(); err != nil {
-		if errors.Is(err, context.Canceled) {
+		switch {
+		case errors.Is(err, context.Canceled):
 			logger.Info("group task canceled")
-			return
+
+		case errors.Is(err, context.DeadlineExceeded):
+			logger.Info("group task canceled by timeout")
+
+		default:
+			logger.Error("group task failed", zap.Error(err))
 		}
 
-		s.logger.Error("group task failed", zap.Error(err))
+		return
 	}
+
+	logger.Info("process completed")
 }

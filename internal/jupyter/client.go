@@ -24,9 +24,6 @@ type Client interface {
 
 	// Quote
 	Quote(ctx context.Context, input, output *instruments.Instrument, amount int64) (*Quote, error)
-
-	// Quotes
-	Quotes(ctx context.Context, input, output *instruments.Instrument, amount int64) (*Quotes, error)
 }
 
 // Client interface implementation
@@ -53,13 +50,14 @@ func newClient(logger *zap.Logger, fclient *fasthttp.Client, config *Config) (*c
 // Token implements Client interface
 func (c *client) Token(_ context.Context, address string) (*Token, error) {
 	var (
-		req   = fasthttp.AcquireRequest()
-		res   = fasthttp.AcquireResponse()
 		token *Token
 		err   error
 	)
 
+	var req = fasthttp.AcquireRequest()
 	defer fasthttp.ReleaseRequest(req)
+
+	var res = fasthttp.AcquireResponse()
 	defer fasthttp.ReleaseResponse(res)
 
 	req.SetRequestURI(c.config.Jupyter.Token.Host + "/" + address)
@@ -114,6 +112,7 @@ func (c *client) Quote(_ context.Context, input, output *instruments.Instrument,
 
 	req.SetRequestURI(uri.String())
 	req.Header.SetMethod(fasthttp.MethodGet)
+
 	req.Header.Set("Connection", "keep-alive")
 
 	// do request
@@ -134,26 +133,4 @@ func (c *client) Quote(_ context.Context, input, output *instruments.Instrument,
 	logger.Debug("taken quotas", zap.Any("quote", quote))
 
 	return quote, nil
-}
-
-// Quotes implements Client interface
-func (c *client) Quotes(ctx context.Context, input, output *instruments.Instrument, amount int64) (*Quotes, error) {
-	var (
-		quotes = new(Quotes)
-		err    error
-	)
-
-	// take direct quotes
-	if quotes.Direct, err = c.Quote(ctx, input, output, amount); err != nil {
-		return nil, err
-	}
-
-	// take reverse quotes
-	amount = quotes.Direct.OutAmount
-
-	if quotes.Reverse, err = c.Quote(ctx, output, input, amount); err != nil {
-		return nil, err
-	}
-
-	return quotes, nil
 }

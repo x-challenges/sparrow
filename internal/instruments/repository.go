@@ -3,6 +3,7 @@ package instruments
 import (
 	"context"
 	"math"
+	"math/big"
 
 	"github.com/puzpuzpuz/xsync/v3"
 	"go.uber.org/zap"
@@ -33,16 +34,19 @@ func newRepository(logger *zap.Logger, config *Config) (*repository, error) {
 
 	// load all available instruments from config to inmemory map
 	for _, instrument := range config.Instruments.Pool {
+		var zeros = int64(math.Pow10(instrument.Decimals))
+
 		data.Store(
 			// key
 			instrument.Address,
 
 			// data
 			&Instrument{
-				Address:  instrument.Address,
-				Ticker:   instrument.Ticker,
-				Decimals: instrument.Decimals,
-				zeros:    int64(math.Pow10(instrument.Decimals)),
+				Address:    instrument.Address,
+				Ticker:     instrument.Ticker,
+				Decimals:   instrument.Decimals,
+				zeros:      zeros,
+				zerosValue: new(big.Float).SetInt64(zeros),
 			},
 		)
 	}
