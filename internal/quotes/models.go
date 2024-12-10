@@ -26,10 +26,10 @@ func (q Quotes) Value() (driver.Value, error) { return model.JSONValuer(q) }
 
 // Profit
 func (q *Quotes) Profit() (float32, bool) {
-	var yes = q.Direct.Quote.OutAmount < q.Reverse.Quote.InAmount
+	var yes = q.Direct.Quote.OutAmount > q.Reverse.Quote.InAmount
 
 	if yes {
-		return (1.0 - float32(q.Direct.Quote.OutAmount)/float32(q.Reverse.Quote.InAmount)) * 100.0, true
+		return (1.0 - float32(q.Reverse.Quote.InAmount)/float32(q.Direct.Quote.OutAmount)) * 100.0, true
 	}
 
 	return 0, false
