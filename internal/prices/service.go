@@ -2,15 +2,17 @@ package prices
 
 import (
 	"context"
+	"sync"
 
 	"go.uber.org/zap"
 	"golang.org/x/sync/errgroup"
 
+	"sparrow/internal/block"
 	"sparrow/internal/instruments"
 	"sparrow/internal/jupyter"
 )
 
-// Serice
+// Service
 type Service interface {
 	// Update
 	Update(ctx context.Context)
@@ -19,24 +21,66 @@ type Service interface {
 // Service interface implementation
 type service struct {
 	logger      *zap.Logger
+	blocks      block.Listener
 	jupyter     jupyter.Client
 	instruments instruments.Service
 	rates       *Rates
+
+	stop chan struct{}
+	done *sync.WaitGroup
 }
 
 // NewService
 func newService(
 	logger *zap.Logger,
+	blocks block.Service,
 	jupyter jupyter.Client,
 	instruments instruments.Service,
 	rates *Rates,
 ) (*service, error) {
 	return &service{
 		logger:      logger,
+		blocks:      blocks.Subscribe(),
 		jupyter:     jupyter,
 		instruments: instruments,
 		rates:       rates,
+
+		stop: make(chan struct{}),
+		done: &sync.WaitGroup{},
 	}, nil
+}
+
+// Start
+func (s *service) Start(ctx context.Context) error {
+	s.done.Add(1)
+
+	go func() {
+		defer s.blocks.Close()
+		defer s.done.Done()
+
+		for {
+			select {
+			case <-s.stop:
+				return
+			case <-s.blocks.Updates():
+				go s.Update(ctx)
+			}
+		}
+	}()
+
+	return nil
+}
+
+// Stop
+func (s *service) Stop(context.Context) error {
+	// send stop channel
+	close(s.stop)
+
+	// wait done
+	s.done.Wait()
+
+	// exit
+	return nil
 }
 
 // Update implements Service interface
