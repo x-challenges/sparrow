@@ -33,13 +33,13 @@ jupyter:
 instruments:
   # available instruments
   pool:
-    - ticker: sol
-      address: So11111111111111111111111111111111111111112
-      decimals: 9
+    # - ticker: sol
+    #   address: So11111111111111111111111111111111111111112
+    #   decimals: 9
 
-    - ticker: usdt
-      address: Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB
-      decimals: 6
+    # - ticker: usdt
+    #   address: Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB
+    #   decimals: 6
 
     - ticker: usdc
       address: EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v
@@ -59,24 +59,24 @@ instruments:
 
 routes:
   # amount range in route pool for each base_ccy
-  range: [0, 2]
+  range: [1, 5]
 
   # using this step, decimals = 1000
   step: 1
 
   base_ccy:
-    # SOL
-    - So11111111111111111111111111111111111111112
-
-    # USDT
-    - Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB
-
     # USDC
     - EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v
 
+    # USDT
+    # - Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB
+
+    # SOL
+    # - So11111111111111111111111111111111111111112
+
 server:
   # check quotes concurrency
-  concurrency: 3
+  concurrency: 5
 
   # block producer interval
   ticker: 10s

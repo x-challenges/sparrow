@@ -9,7 +9,11 @@ import (
 )
 
 // Quote
-type Quote = jupyter.Quote
+type Quote struct {
+	Quote     *jupyter.Quote `json:"quote"`
+	StartedAt int64          `json:"started_at"`
+	EndedAt   int64          `json:"ended_at"`
+}
 
 // Quotes
 type Quotes struct {
@@ -22,10 +26,10 @@ func (q Quotes) Value() (driver.Value, error) { return model.JSONValuer(q) }
 
 // Profit
 func (q *Quotes) Profit() (float32, bool) {
-	var yes = q.Direct.InAmount < q.Reverse.OutAmount
+	var yes = q.Direct.Quote.OutAmount < q.Reverse.Quote.InAmount
 
 	if yes {
-		return (1.0 - float32(q.Direct.InAmount)/float32(q.Reverse.OutAmount)) * 100.0, true
+		return (1.0 - float32(q.Direct.Quote.OutAmount)/float32(q.Reverse.Quote.InAmount)) * 100.0, true
 	}
 
 	return 0, false

@@ -4,6 +4,14 @@ import (
 	"time"
 )
 
+// SwapMode
+type SwapMode int
+
+const (
+	ExactIn SwapMode = iota
+	ExactOut
+)
+
 // Token
 type Token struct {
 	Address  string `json:"address"`

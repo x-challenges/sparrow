@@ -2,8 +2,10 @@ package quotes
 
 import (
 	"context"
+	"time"
 
 	"go.uber.org/zap"
+	"golang.org/x/sync/errgroup"
 
 	"github.com/x-challenges/raven/kun/model"
 
@@ -15,9 +17,6 @@ import (
 type Service interface {
 	// BatchInsert
 	BatchInsert(ctx context.Context, quotes ...*Quotes) error
-
-	// Quote
-	Quote(ctx context.Context, input, output *instruments.Instrument, amount int64) (*Quote, error)
 
 	// Quotes
 	Quotes(ctx context.Context, input, output *instruments.Instrument, amount int64) (*Quotes, error)
@@ -43,27 +42,37 @@ func newService(logger *zap.Logger, client jupyter.Client, repository Repository
 	}, nil
 }
 
-// Quote implements Service interface
-func (s *service) Quote(ctx context.Context, input, output *instruments.Instrument, amount int64) (*Quote, error) {
-	return s.client.Quote(ctx, input, output, amount)
-}
-
 // Quotes implements Service interface
 func (s *service) Quotes(ctx context.Context, input, output *instruments.Instrument, amount int64) (*Quotes, error) {
 	var (
-		quotes = new(Quotes)
-		err    error
+		group, groupCtx = errgroup.WithContext(ctx)
+		quotes          = &Quotes{Direct: new(Quote), Reverse: new(Quote)}
+		err             error
 	)
 
-	// take direct quotes
-	if quotes.Direct, err = s.Quote(ctx, input, output, amount); err != nil {
-		return nil, err
-	}
+	// take direct quote
+	group.Go(
+		func() error {
+			quotes.Direct.StartedAt = time.Now().UnixMilli()
+			quotes.Direct.Quote, err = s.client.Quote(groupCtx, input, output, amount, jupyter.WithSwapMode(jupyter.ExactIn))
+			quotes.Direct.EndedAt = time.Now().UnixMilli()
 
-	amount = quotes.Direct.OutAmount
+			return err
+		},
+	)
 
-	// take reverse quotes
-	if quotes.Reverse, err = s.Quote(ctx, output, input, amount); err != nil {
+	// take reverse quote
+	group.Go(
+		func() error {
+			quotes.Reverse.StartedAt = time.Now().UnixMilli()
+			quotes.Reverse.Quote, err = s.client.Quote(groupCtx, output, input, amount, jupyter.WithSwapMode(jupyter.ExactOut))
+			quotes.Reverse.EndedAt = time.Now().UnixMilli()
+			return err
+		},
+	)
+
+	// wait group
+	if err = group.Wait(); err != nil {
 		return nil, err
 	}
 

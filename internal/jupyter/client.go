@@ -23,7 +23,12 @@ type Client interface {
 	Token(ctx context.Context, address string) (*Token, error)
 
 	// Quote
-	Quote(ctx context.Context, input, output *instruments.Instrument, amount int64) (*Quote, error)
+	Quote(
+		ctx context.Context,
+		input, output *instruments.Instrument,
+		amount int64,
+		options ...QuoteOptionFunc,
+	) (*Quote, error)
 }
 
 // Client interface implementation
@@ -77,10 +82,16 @@ func (c *client) Token(_ context.Context, address string) (*Token, error) {
 }
 
 // Quote implements Client interface
-func (c *client) Quote(_ context.Context, input, output *instruments.Instrument, amount int64) (*Quote, error) {
+func (c *client) Quote(
+	_ context.Context,
+	input, output *instruments.Instrument,
+	amount int64,
+	opts ...QuoteOptionFunc,
+) (*Quote, error) {
 	var (
-		quote *Quote
-		err   error
+		options = NewQuoteOptions().Apply(opts...)
+		quote   *Quote
+		err     error
 	)
 
 	// prepare logger
@@ -88,6 +99,7 @@ func (c *client) Quote(_ context.Context, input, output *instruments.Instrument,
 		zap.Any("input", input),
 		zap.Any("output", input),
 		zap.Int64("amount", amount),
+		zap.Any("options", options),
 	)
 
 	// acquire fasthttp request
@@ -109,6 +121,14 @@ func (c *client) Quote(_ context.Context, input, output *instruments.Instrument,
 	_, _ = uri.WriteString("?inputMint=" + url.QueryEscape(input.Address))
 	_, _ = uri.WriteString("&outputMint=" + url.QueryEscape(output.Address))
 	_, _ = uri.WriteString("&amount=" + url.QueryEscape(strconv.FormatInt(amount, 10)))
+
+	// swap mode
+	switch options.SwapMode {
+	case ExactIn:
+		_, _ = uri.WriteString("&swapMode=ExactIn")
+	case ExactOut:
+		_, _ = uri.WriteString("&swapMode=ExactOut")
+	}
 
 	req.SetRequestURI(uri.String())
 	req.Header.SetMethod(fasthttp.MethodGet)
