@@ -10,6 +10,7 @@ import (
 	"go.uber.org/zap"
 
 	"sparrow/internal/block"
+	"sparrow/internal/prices"
 	"sparrow/internal/quotes"
 	"sparrow/internal/routes"
 )
@@ -18,6 +19,7 @@ import (
 type Server struct {
 	logger *zap.Logger
 	pool   pond.ResultPool[*quotes.Quotes]
+	prices prices.Service
 	quotes quotes.Service
 	routes routes.Service
 	blocks block.Listener
@@ -34,6 +36,7 @@ type NewServerFx struct {
 	fx.In
 
 	Logger *zap.Logger
+	Prices prices.Service
 	Quotes quotes.Service
 	Routes routes.Service
 	Blocks block.Service
@@ -45,6 +48,7 @@ type NewServerFx struct {
 func NewServer(p NewServerFx) *Server {
 	return &Server{
 		logger: p.Logger,
+		prices: p.Prices,
 		quotes: p.Quotes,
 		routes: p.Routes,
 		blocks: p.Blocks.Subscribe(),
@@ -80,6 +84,11 @@ func (s *Server) Start(ctx context.Context) error {
 
 				// create new context with cancelation
 				ctx, processCancel = context.WithCancel(context.Background())
+
+				// run price updates
+				go func() {
+					s.prices.Update(ctx)
+				}()
 
 				// run process goroutine in background
 				go func() {

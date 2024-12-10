@@ -22,6 +22,13 @@ type Client interface {
 	// Token
 	Token(ctx context.Context, address string) (*Token, error)
 
+	// Prices
+	Prices(
+		ctx context.Context,
+		from *instruments.Instrument,
+		to instruments.Instruments,
+	) (*Prices, error)
+
 	// Quote
 	Quote(
 		ctx context.Context,
@@ -52,6 +59,9 @@ func newClient(logger *zap.Logger, fclient *fasthttp.Client, config *Config) (*c
 	}, nil
 }
 
+// RequestCallback
+type RequestCallback = func(req *fasthttp.Request, res *fasthttp.Response) error
+
 // Token implements Client interface
 func (c *client) Token(_ context.Context, address string) (*Token, error) {
 	var (
@@ -79,6 +89,61 @@ func (c *client) Token(_ context.Context, address string) (*Token, error) {
 	}
 
 	return token, nil
+}
+
+// Prices implement Client interface
+func (c *client) Prices(
+	_ context.Context,
+	from *instruments.Instrument,
+	to instruments.Instruments,
+) (*Prices, error) {
+	var (
+		prices *Prices
+		err    error
+	)
+
+	// acquire fasthttp request
+	var req = fasthttp.AcquireRequest()
+	defer fasthttp.ReleaseRequest(req)
+
+	// acquire fasthttp response
+	var res = fasthttp.AcquireResponse()
+	defer fasthttp.ReleaseResponse(res)
+
+	// prepare strings builder for url
+	var uri strings.Builder
+	uri.Grow(256)
+
+	// write host
+	_, _ = uri.WriteString(c.config.Jupyter.Price.Host)
+
+	// write params
+	_, _ = uri.WriteString("?vsToken=" + from.Address)
+	_, _ = uri.WriteString("&ids=" + strings.Join(to.Addresses(), ","))
+
+	req.SetRequestURI(uri.String())
+	req.Header.SetMethod(fasthttp.MethodGet)
+
+	req.Header.Set("Connection", "keep-alive")
+
+	// do request
+	if err = c.client.Do(req, res); err != nil {
+		return nil, err
+	}
+
+	// check http status
+	if st := res.StatusCode(); st != http.StatusOK {
+		return nil, fmt.Errorf("received unexpected http status code, %d", st)
+	}
+
+	// parse json
+	if err = json.NewDecoder(bytes.NewBuffer(res.Body())).Decode(&prices); err != nil {
+		return nil, err
+	}
+
+	c.logger.Debug("taken prices", zap.Any("quote", prices))
+
+	return prices, nil
 }
 
 // Quote implements Client interface

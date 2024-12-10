@@ -1,9 +1,5 @@
 package jupyter
 
-import (
-	"time"
-)
-
 // SwapMode
 type SwapMode int
 
@@ -40,11 +36,23 @@ type QuoteRoutePlan struct {
 
 // Quote
 type Quote struct {
-	InputMint   string           `json:"inputMint"`
-	InAmount    int64            `json:"inAmount,string"`
-	OutputMint  string           `json:"outputMint"`
-	OutAmount   int64            `json:"outAmount,string"`
-	RoutePlan   []QuoteRoutePlan `json:"routePlan"`
-	TimeTaken   float32          `json:"timeTaken"`
-	TimeRequest time.Time        `json:"-"`
+	InputMint  string           `json:"inputMint"`
+	InAmount   int64            `json:"inAmount,string"`
+	OutputMint string           `json:"outputMint"`
+	OutAmount  int64            `json:"outAmount,string"`
+	RoutePlan  []QuoteRoutePlan `json:"routePlan"`
+	TimeTaken  float32          `json:"timeTaken"`
+}
+
+// Price
+type Price struct {
+	ID    string  `json:"id"`
+	Type  string  `json:"type"`
+	Price float32 `json:"price,string"`
+}
+
+// Prices
+type Prices struct {
+	Data      map[string]Price `json:"data"`
+	TimeTaken float32          `json:"timeTaken"`
 }
