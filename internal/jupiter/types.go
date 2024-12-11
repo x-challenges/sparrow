@@ -1,4 +1,4 @@
-package jupyter
+package jupiter
 
 // SwapMode
 type SwapMode int
@@ -10,11 +10,11 @@ const (
 
 // Token
 type Token struct {
-	Address  string `json:"address"`
-	Name     string `json:"name"`
-	Symbol   string `json:"symbol"`
-	Decimals int64  `json:"decimals"`
-	LogoURI  string `json:"logoURI"`
+	Address     string  `json:"address"`
+	Name        string  `json:"name"`
+	Symbol      string  `json:"symbol"`
+	Decimals    int     `json:"decimals"`
+	DailyVolume float64 `json:"daily_volume"`
 }
 
 // Tokens

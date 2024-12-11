@@ -1,4 +1,4 @@
-package jupyter
+package jupiter
 
 import (
 	"sync"

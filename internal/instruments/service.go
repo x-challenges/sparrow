@@ -2,18 +2,14 @@ package instruments
 
 import (
 	"context"
-	"iter"
 	"math"
 	"math/big"
 	"slices"
 
 	"go.uber.org/zap"
 
-	"sparrow/internal/tokens"
+	"sparrow/internal/jupiter"
 )
-
-// Iterator
-type Iterator iter.Seq[*Instrument]
 
 // Service
 type Service interface {
@@ -28,12 +24,15 @@ type Service interface {
 
 	// Routable
 	Routable(ctx context.Context) (Iterator, error)
+
+	// Addresses
+	Addresses(ctx context.Context) ([]string, error)
 }
 
 // Service interface implementation
 type service struct {
 	logger     *zap.Logger
-	tokens     tokens.Service
+	jupiter    jupiter.Client
 	config     *Config
 	repository Repository
 }
@@ -41,10 +40,10 @@ type service struct {
 var _ Service = (*service)(nil)
 
 // NewService
-func newService(logger *zap.Logger, tokens tokens.Service, config *Config, repository Repository) (*service, error) {
+func newService(logger *zap.Logger, jupiter jupiter.Client, config *Config, repository Repository) (*service, error) {
 	return &service{
 		logger:     logger,
-		tokens:     tokens,
+		jupiter:    jupiter,
 		config:     config,
 		repository: repository,
 	}, nil
@@ -52,27 +51,73 @@ func newService(logger *zap.Logger, tokens tokens.Service, config *Config, repos
 
 // Start
 func (s *service) Start(ctx context.Context) error {
-	var err error
+	var (
+		tokens jupiter.Tokens
+		err    error
+	)
 
-	// load all available instruments from config to inmemory map
-	for _, instrument := range s.config.Instruments.Pool {
+	// try to load all tokens from jupiter
+	if tokens, err = s.jupiter.Tokens(ctx); err != nil {
+		return err
+	}
+
+	var (
+		dailyVolume = s.config.Instruments.Loader.Skip.DailyVolume
+		counter     int
+	)
+
+	// load all tokens as a instruments to storage
+	for _, token := range tokens {
+		// skip token by daily_volume
+		if dailyVolume != 0 && token.DailyVolume <= dailyVolume {
+			continue
+		}
+
 		var (
-			zeros      = int64(math.Pow10(instrument.Decimals))
 			instrument = &Instrument{
-				Address:    instrument.Address,
-				Ticker:     instrument.Ticker,
-				Decimals:   instrument.Decimals,
-				Tags:       instrument.Tags,
-				Zeros:      zeros,
-				zerosValue: new(big.Float).SetInt64(zeros),
+				Address:    token.Address,
+				Ticker:     token.Name,
+				Decimals:   token.Decimals,
+				Zeros:      int64(math.Pow10(token.Decimals)),
+				zerosValue: new(big.Float).SetInt64(int64(math.Pow10(token.Decimals))),
+				token:      &token,
 			}
 		)
+
+		// save instrument to storage
+		if err = s.repository.Store(ctx, instrument); err != nil {
+			return err
+		}
+
+		counter++
+	}
+
+	s.logger.Info("loaded tokens to instruments storage",
+		zap.Int("total", len(tokens)),
+		zap.Int("actual", counter),
+	)
+
+	// setup instruments from configuration
+	for _, i := range s.config.Instruments.Pool {
+		var (
+			instrument *Instrument
+			err        error
+		)
+
+		// load instrument for configuration
+		if instrument, err = s.repository.Get(ctx, i.Address); err != nil {
+			return err
+		}
+
+		instrument.Tags = i.Tags
 
 		// store instrument into storage
 		if err = s.repository.Store(ctx, instrument); err != nil {
 			return err
 		}
 	}
+
+	s.logger.Info("completed")
 
 	return nil
 }
@@ -120,4 +165,23 @@ func (s *service) Base(ctx context.Context) (Iterator, error) {
 // Routable implements Service interface
 func (s *service) Routable(ctx context.Context) (Iterator, error) {
 	return s.Range(ctx, Route)
+}
+
+// Addresses
+func (s *service) Addresses(ctx context.Context) ([]string, error) {
+	var (
+		res = make([]string, 0, 1000)
+		all Instruments
+		err error
+	)
+
+	if all, err = s.repository.List(ctx); err != nil {
+		return nil, err
+	}
+
+	for _, inst := range all {
+		res = append(res, inst.Address)
+	}
+
+	return res, nil
 }

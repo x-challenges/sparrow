@@ -5,12 +5,12 @@ import (
 
 	"github.com/x-challenges/raven/kun/model"
 
-	"sparrow/internal/jupyter"
+	"sparrow/internal/jupiter"
 )
 
 // Quote
 type Quote struct {
-	Quote     *jupyter.Quote `json:"quote"`
+	Quote     *jupiter.Quote `json:"quote"`
 	StartedAt int64          `json:"started_at"`
 	EndedAt   int64          `json:"ended_at"`
 }

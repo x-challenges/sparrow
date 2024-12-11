@@ -1,4 +1,4 @@
-package jupyter
+package jupiter
 
 import (
 	"bytes"
@@ -48,7 +48,7 @@ func newClient(logger *zap.Logger, fclient *fasthttp.Client, config *Config) (*c
 		logger:     logger,
 		client:     fclient,
 		config:     config,
-		quoteHosts: NewBalancer(config.Jupyter.Quote.Hosts...),
+		quoteHosts: NewBalancer(config.Jupiter.Quote.Hosts...),
 	}, nil
 }
 
@@ -65,7 +65,7 @@ func (c *client) Tokens(_ context.Context) (Tokens, error) {
 	var res = fasthttp.AcquireResponse()
 	defer fasthttp.ReleaseResponse(res)
 
-	req.SetRequestURI(c.config.Jupyter.Token.Host + "?tags=verified")
+	req.SetRequestURI(c.config.Jupiter.Token.Host + "?tags=verified")
 	req.Header.Set("Connection", "keep-alive")
 
 	// do request
@@ -79,7 +79,7 @@ func (c *client) Tokens(_ context.Context) (Tokens, error) {
 	}
 
 	// parse json
-	if err = json.NewDecoder(req.BodyStream()).Decode(&tokens); err != nil {
+	if err = json.NewDecoder(bytes.NewBuffer(res.Body())).Decode(&tokens); err != nil {
 		return nil, err
 	}
 
@@ -108,7 +108,7 @@ func (c *client) Prices(_ context.Context, input string, outputs ...string) (*Pr
 	uri.Grow(256)
 
 	// write host
-	_, _ = uri.WriteString(c.config.Jupyter.Price.Host)
+	_, _ = uri.WriteString(c.config.Jupiter.Price.Host)
 
 	// write params
 	_, _ = uri.WriteString("?vsToken=" + input)

@@ -1,6 +1,7 @@
 package instruments
 
 import (
+	"iter"
 	"math/big"
 )
 
@@ -14,14 +15,18 @@ const (
 	Swap        Tag = "swap"
 )
 
+// Iterator
+type Iterator iter.Seq[*Instrument]
+
 // Instrument
 type Instrument struct {
-	Address    string `mapstructure:"address" json:"address" validate:"required"`
-	Ticker     string `mapstructure:"ticker" json:"ticker" validate:"required"`
-	Decimals   int    `mapstructure:"decimals" json:"decimals" validate:"required"`
-	Tags       []Tag  `mapstructure:"tags" json:"tags" validate:"required" default:"[swap]"`
-	Zeros      int64
-	zerosValue *big.Float
+	Address    string     `json:"address"`
+	Ticker     string     `json:"ticker"`
+	Decimals   int        `json:"decimals"`
+	Tags       []Tag      `json:"tags"`
+	Zeros      int64      `json:"-"`
+	token      *Token     `json:"-"`
+	zerosValue *big.Float `json:"-"`
 }
 
 // QFromInt64

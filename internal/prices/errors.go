@@ -3,5 +3,5 @@ package prices
 import "errors"
 
 var (
-	ErrNotFound = errors.New("not found")
+	ErrNotFound = errors.New("price not found")
 )

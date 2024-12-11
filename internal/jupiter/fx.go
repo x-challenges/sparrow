@@ -1,4 +1,4 @@
-package jupyter
+package jupiter
 
 import (
 	"go.uber.org/fx"
@@ -8,7 +8,7 @@ import (
 )
 
 // ModuleName
-const ModuleName = "jupyter"
+const ModuleName = "jupiter"
 
 // Module
 var Module = fx.Module(

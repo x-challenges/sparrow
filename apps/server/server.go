@@ -10,6 +10,7 @@ import (
 	"go.uber.org/zap"
 
 	"sparrow/internal/block"
+	"sparrow/internal/prices"
 	"sparrow/internal/quotes"
 	"sparrow/internal/routes"
 )
@@ -21,6 +22,7 @@ type Server struct {
 	quotes quotes.Service
 	routes routes.Service
 	blocks block.Listener
+	prices prices.Service
 
 	config *Config
 	cancel context.CancelFunc
@@ -37,6 +39,7 @@ type NewServerFx struct {
 	Quotes quotes.Service
 	Routes routes.Service
 	Blocks block.Service
+	Prices prices.Service
 
 	Config *Config
 }
@@ -48,6 +51,7 @@ func NewServer(p NewServerFx) *Server {
 		quotes: p.Quotes,
 		routes: p.Routes,
 		blocks: p.Blocks.Subscribe(),
+		prices: p.Prices,
 
 		config: p.Config,
 		pool:   pond.NewResultPool[*quotes.Quotes](p.Config.Server.Concurrency),

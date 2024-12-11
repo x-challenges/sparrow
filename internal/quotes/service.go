@@ -10,7 +10,7 @@ import (
 	"github.com/x-challenges/raven/kun/model"
 
 	"sparrow/internal/instruments"
-	"sparrow/internal/jupyter"
+	"sparrow/internal/jupiter"
 )
 
 // Service
@@ -25,7 +25,7 @@ type Service interface {
 // Service interface implementation
 type service struct {
 	logger     *zap.Logger
-	client     jupyter.Client
+	client     jupiter.Client
 	repository Repository
 	config     *Config
 }
@@ -33,7 +33,7 @@ type service struct {
 var _ Service = (*service)(nil)
 
 // NewService
-func newService(logger *zap.Logger, client jupyter.Client, repository Repository, config *Config) (*service, error) {
+func newService(logger *zap.Logger, client jupiter.Client, repository Repository, config *Config) (*service, error) {
 	return &service{
 		logger:     logger,
 		client:     client,
@@ -60,7 +60,7 @@ func (s *service) Quotes(ctx context.Context, input, output *instruments.Instrum
 				groupCtx,
 				input.Address, output.Address,
 				amount,
-				jupyter.WithSwapMode(jupyter.ExactIn),
+				jupiter.WithSwapMode(jupiter.ExactIn),
 			)
 
 			quotes.Direct.EndedAt = time.Now().UnixMilli()
@@ -78,7 +78,7 @@ func (s *service) Quotes(ctx context.Context, input, output *instruments.Instrum
 				groupCtx,
 				output.Address, input.Address,
 				amount,
-				jupyter.WithSwapMode(jupyter.ExactOut),
+				jupiter.WithSwapMode(jupiter.ExactOut),
 			)
 
 			quotes.Reverse.EndedAt = time.Now().UnixMilli()

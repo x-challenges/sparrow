@@ -10,11 +10,10 @@ import (
 
 	"sparrow/internal/block"
 	"sparrow/internal/instruments"
-	"sparrow/internal/jupyter"
+	"sparrow/internal/jupiter"
 	"sparrow/internal/prices"
 	"sparrow/internal/quotes"
 	"sparrow/internal/routes"
-	"sparrow/internal/tokens"
 )
 
 // ModuleName
@@ -25,8 +24,7 @@ var Module = fx.Module(
 	ModuleName,
 
 	// internal
-	jupyter.Module,
-	tokens.Module,
+	jupiter.Module,
 	instruments.Module,
 	block.Module,
 	prices.Module,

@@ -1,8 +1,8 @@
-package jupyter
+package jupiter
 
 // Config
 type Config struct {
-	Jupyter struct {
+	Jupiter struct {
 		Token struct {
 			Host string `mapstructure:"host" validate:"required"`
 		} `mapstructure:"token"`
@@ -14,5 +14,5 @@ type Config struct {
 		Quote struct {
 			Hosts []string `mapstructure:"hosts" validate:"required"`
 		} `mapstructure:"quote"`
-	} `mapstructure:"jupyter"`
+	} `mapstructure:"jupiter"`
 }

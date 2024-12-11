@@ -2,27 +2,31 @@ package prices
 
 import (
 	"context"
+	"slices"
 	"sync"
+	"time"
 
 	"go.uber.org/zap"
+	"golang.org/x/sync/errgroup"
 
 	"sparrow/internal/block"
 	"sparrow/internal/instruments"
-	"sparrow/internal/jupyter"
+	"sparrow/internal/jupiter"
 )
 
 // Service
 type Service interface {
-	// Update
-	Update(ctx context.Context)
+	// Exchange
+	Exchange(ctx context.Context, input, output string, amount int64) (int64, error)
 }
 
 // Service interface implementation
 type service struct {
 	logger      *zap.Logger
 	blocks      block.Listener
-	jupyter     jupyter.Client
+	jupiter     jupiter.Client
 	instruments instruments.Service
+	config      *Config
 	rates       *Rates
 
 	stop chan struct{}
@@ -33,15 +37,17 @@ type service struct {
 func newService(
 	logger *zap.Logger,
 	blocks block.Service,
-	jupyter jupyter.Client,
+	jupiter jupiter.Client,
 	instruments instruments.Service,
+	config *Config,
 	rates *Rates,
 ) (*service, error) {
 	return &service{
 		logger:      logger,
 		blocks:      blocks.Subscribe(),
-		jupyter:     jupyter,
+		jupiter:     jupiter,
 		instruments: instruments,
+		config:      config,
 		rates:       rates,
 
 		stop: make(chan struct{}),
@@ -51,11 +57,20 @@ func newService(
 
 // Start
 func (s *service) Start(ctx context.Context) error {
+	// init rates storage
+	if err := s.Init(ctx); err != nil {
+		return err
+	}
+
+	// run background tasks for updates
 	s.done.Add(1)
 
-	go func() {
+	go func(ctx context.Context) {
 		defer s.blocks.Close()
 		defer s.done.Done()
+
+		// first launch
+		go s.Update(ctx)
 
 		for {
 			select {
@@ -65,7 +80,7 @@ func (s *service) Start(ctx context.Context) error {
 				go s.Update(ctx)
 			}
 		}
-	}()
+	}(ctx)
 
 	return nil
 }
@@ -82,47 +97,90 @@ func (s *service) Stop(context.Context) error {
 	return nil
 }
 
-// Update implements Service interface
-func (s *service) Update(context.Context) {
-	// var (
-	// 	group, groupCtx = errgroup.WithContext(ctx)
-	// 	all             instruments.Iterator
-	// 	err             error
-	// )
+// Init
+func (s *service) Init(ctx context.Context) error {
+	var (
+		inputIterator  instruments.Iterator
+		outputIterator instruments.Iterator
+		err            error
+	)
 
-	// take all instruments iterator
-	// if all, err = s.instruments.All(ctx); err != nil {
-	// 	s.logger.Error("take all instruments failed", zap.Error(err))
-	// }
+	// take input instruments iterator
+	if inputIterator, err = s.instruments.Base(ctx); err != nil {
+		return err
+	}
 
-	// for base := range all {
-	// 	var base = *base
+	// take output instruments iterator
+	if outputIterator, err = s.instruments.All(ctx); err != nil {
+		return err
+	}
 
-	// 	group.Go(
-	// 		func() error {
-	// 			var (
-	// 				prices *jupyter.Prices
-	// 			)
+	// init storage
+	for input := range inputIterator {
+		for output := range outputIterator {
+			s.rates.Store(input.Address, output.Address, 0)
+		}
+	}
 
-	// 			// take all prices
-	// 			if prices, err = s.jupyter.Prices(groupCtx, &base, all); err != nil {
-	// 				return err
-	// 			}
+	return nil
+}
 
-	// 			// store prices
-	// 			for _, price := range prices.Data {
-	// 				s.rates.Store(base.Address, price.ID, price.Price)
-	// 			}
+// Update
+func (s *service) Update(ctx context.Context) {
+	var (
+		started         = time.Now()
+		inputIterator   instruments.Iterator
+		outputAddresses []string
+		err             error
+	)
 
-	// 			return nil
-	// 		},
-	// 	)
-	// }
+	// take input instruments iterator
+	if inputIterator, err = s.instruments.Base(ctx); err != nil {
+		s.logger.Error("take input instruments iterator failed", zap.Error(err))
+		return
+	}
+
+	// take output addresses as a slice
+	if outputAddresses, err = s.instruments.Addresses(ctx); err != nil {
+		s.logger.Error("take output addresses failed", zap.Error(err))
+		return
+	}
+
+	var group, groupCtx = errgroup.WithContext(ctx)
+
+	for input := range inputIterator {
+		var chunks = slices.Chunk(outputAddresses, s.config.Prices.Loader.ChunkSize)
+
+		for chunk := range chunks {
+			group.Go(
+				func() error {
+					var prices *jupiter.Prices
+
+					// take all prices from jupiter
+					if prices, err = s.jupiter.Prices(groupCtx, input.Address, chunk...); err != nil {
+						return err
+					}
+
+					// store prices
+					for _, price := range prices.Data {
+						s.rates.Store(input.Address, price.ID, price.Price)
+					}
+
+					return nil
+				},
+			)
+		}
+	}
 
 	// wait all goroutines
-	// if err = group.Wait(); err != nil {
-	// 	s.logger.Error("update price failed", zap.Error(err))
-	// }
+	if err = group.Wait(); err != nil {
+		s.logger.Error("update price failed", zap.Error(err))
+	}
 
-	s.logger.Info("prices updated")
+	s.logger.Info("price updates", zap.Duration("elapsed", time.Since(started)))
+}
+
+// Exchange implements Service interface
+func (s *service) Exchange(_ context.Context, _, _ string, _ int64) (int64, error) {
+	return 0, nil
 }

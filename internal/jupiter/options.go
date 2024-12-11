@@ -1,4 +1,4 @@
-package jupyter
+package jupiter
 
 // QuoteOptions
 type QuoteOptions struct {
