@@ -14,6 +14,7 @@ import (
 	"sparrow/internal/prices"
 	"sparrow/internal/quotes"
 	"sparrow/internal/routes"
+	"sparrow/internal/tokens"
 )
 
 // ModuleName
@@ -25,6 +26,7 @@ var Module = fx.Module(
 
 	// internal
 	jupyter.Module,
+	tokens.Module,
 	instruments.Module,
 	block.Module,
 	prices.Module,

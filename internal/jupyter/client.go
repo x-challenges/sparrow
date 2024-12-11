@@ -3,7 +3,6 @@ package jupyter
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -19,8 +18,8 @@ import (
 
 // Client
 type Client interface {
-	// Token
-	Token(ctx context.Context, address string) (*Token, error)
+	// Tokens
+	Tokens(ctx context.Context) (Tokens, error)
 
 	// Prices
 	Prices(
@@ -59,14 +58,11 @@ func newClient(logger *zap.Logger, fclient *fasthttp.Client, config *Config) (*c
 	}, nil
 }
 
-// RequestCallback
-type RequestCallback = func(req *fasthttp.Request, res *fasthttp.Response) error
-
-// Token implements Client interface
-func (c *client) Token(_ context.Context, address string) (*Token, error) {
+// Tokens implements Client interface
+func (c *client) Tokens(_ context.Context) (Tokens, error) {
 	var (
-		token *Token
-		err   error
+		tokens Tokens
+		err    error
 	)
 
 	var req = fasthttp.AcquireRequest()
@@ -75,7 +71,7 @@ func (c *client) Token(_ context.Context, address string) (*Token, error) {
 	var res = fasthttp.AcquireResponse()
 	defer fasthttp.ReleaseResponse(res)
 
-	req.SetRequestURI(c.config.Jupyter.Token.Host + "/" + address)
+	req.SetRequestURI(c.config.Jupyter.Token.Host + "?tags=verified")
 	req.Header.Set("Connection", "keep-alive")
 
 	// do request
@@ -83,12 +79,19 @@ func (c *client) Token(_ context.Context, address string) (*Token, error) {
 		return nil, err
 	}
 
+	// check http status
+	if st := res.StatusCode(); st != http.StatusOK {
+		return nil, ErrUnexpectedStatusCode
+	}
+
 	// parse json
-	if err = json.NewDecoder(req.BodyStream()).Decode(&token); err != nil {
+	if err = json.NewDecoder(req.BodyStream()).Decode(&tokens); err != nil {
 		return nil, err
 	}
 
-	return token, nil
+	c.logger.Debug("taken tokens", zap.Int("count", len(tokens)))
+
+	return tokens, nil
 }
 
 // Prices implement Client interface
@@ -133,7 +136,7 @@ func (c *client) Prices(
 
 	// check http status
 	if st := res.StatusCode(); st != http.StatusOK {
-		return nil, fmt.Errorf("received unexpected http status code, %d", st)
+		return nil, ErrUnexpectedStatusCode
 	}
 
 	// parse json
@@ -187,6 +190,10 @@ func (c *client) Quote(
 	_, _ = uri.WriteString("&outputMint=" + url.QueryEscape(output.Address))
 	_, _ = uri.WriteString("&amount=" + url.QueryEscape(strconv.FormatInt(amount, 10)))
 
+	// some optimizations
+	_, _ = uri.WriteString("&restrictIntermediateTokens=true")
+	_, _ = uri.WriteString("&onlyDirectRoutes=false")
+
 	// swap mode
 	switch options.SwapMode {
 	case ExactIn:
@@ -207,7 +214,7 @@ func (c *client) Quote(
 
 	// check http status
 	if st := res.StatusCode(); st != http.StatusOK {
-		return nil, fmt.Errorf("received unexpected http status code, %d", st)
+		return nil, ErrUnexpectedStatusCode
 	}
 
 	// parse json
@@ -215,7 +222,7 @@ func (c *client) Quote(
 		return nil, err
 	}
 
-	logger.Debug("taken quotas", zap.Any("quote", quote))
+	logger.Debug("taken quote", zap.Any("quote", quote))
 
 	return quote, nil
 }

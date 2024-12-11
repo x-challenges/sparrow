@@ -72,7 +72,7 @@ func (s *service) Start(ctx context.Context) error {
 
 // Stop
 func (s *service) Stop(context.Context) error {
-	// send stop channel
+	// send stop signal
 	close(s.stop)
 
 	// wait done

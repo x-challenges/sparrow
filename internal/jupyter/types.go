@@ -17,6 +17,9 @@ type Token struct {
 	LogoURI  string `json:"logoURI"`
 }
 
+// Tokens
+type Tokens []Token
+
 // QuoteRoutePlanSwapInfo
 type QuoteRoutePlanSwapInfo struct {
 	Ammkey     string `json:"ammKey"`
