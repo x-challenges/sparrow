@@ -12,8 +12,6 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/x-challenges/raven/common/json"
-
-	"sparrow/internal/instruments"
 )
 
 // Client
@@ -22,16 +20,12 @@ type Client interface {
 	Tokens(ctx context.Context) (Tokens, error)
 
 	// Prices
-	Prices(
-		ctx context.Context,
-		from *instruments.Instrument,
-		to instruments.Instruments,
-	) (*Prices, error)
+	Prices(ctx context.Context, input string, outputs ...string) (*Prices, error)
 
 	// Quote
 	Quote(
 		ctx context.Context,
-		input, output *instruments.Instrument,
+		input, output string,
 		amount int64,
 		options ...QuoteOptionFunc,
 	) (*Quote, error)
@@ -95,11 +89,7 @@ func (c *client) Tokens(_ context.Context) (Tokens, error) {
 }
 
 // Prices implement Client interface
-func (c *client) Prices(
-	_ context.Context,
-	from *instruments.Instrument,
-	to instruments.Instruments,
-) (*Prices, error) {
+func (c *client) Prices(_ context.Context, input string, outputs ...string) (*Prices, error) {
 	var (
 		prices *Prices
 		err    error
@@ -121,8 +111,8 @@ func (c *client) Prices(
 	_, _ = uri.WriteString(c.config.Jupyter.Price.Host)
 
 	// write params
-	_, _ = uri.WriteString("?vsToken=" + from.Address)
-	_, _ = uri.WriteString("&ids=" + strings.Join(to.Addresses(), ","))
+	_, _ = uri.WriteString("?vsToken=" + input)
+	_, _ = uri.WriteString("&ids=" + strings.Join(outputs, ","))
 
 	req.SetRequestURI(uri.String())
 	req.Header.SetMethod(fasthttp.MethodGet)
@@ -152,7 +142,7 @@ func (c *client) Prices(
 // Quote implements Client interface
 func (c *client) Quote(
 	_ context.Context,
-	input, output *instruments.Instrument,
+	input, output string,
 	amount int64,
 	opts ...QuoteOptionFunc,
 ) (*Quote, error) {
@@ -186,8 +176,8 @@ func (c *client) Quote(
 	_, _ = uri.WriteString(c.quoteHosts.Next())
 
 	// write params
-	_, _ = uri.WriteString("?inputMint=" + url.QueryEscape(input.Address))
-	_, _ = uri.WriteString("&outputMint=" + url.QueryEscape(output.Address))
+	_, _ = uri.WriteString("?inputMint=" + url.QueryEscape(input))
+	_, _ = uri.WriteString("&outputMint=" + url.QueryEscape(output))
 	_, _ = uri.WriteString("&amount=" + url.QueryEscape(strconv.FormatInt(amount, 10)))
 
 	// some optimizations

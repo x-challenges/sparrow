@@ -54,9 +54,16 @@ func (s *service) Quotes(ctx context.Context, input, output *instruments.Instrum
 	group.Go(
 		func() error {
 			quotes.Direct.StartedAt = time.Now().UnixMilli()
-			quotes.Direct.Quote, err = s.client.Quote(groupCtx, input, output, amount, jupyter.WithSwapMode(jupyter.ExactIn))
-			quotes.Direct.EndedAt = time.Now().UnixMilli()
 
+			// fetch quote
+			quotes.Direct.Quote, err = s.client.Quote(
+				groupCtx,
+				input.Address, output.Address,
+				amount,
+				jupyter.WithSwapMode(jupyter.ExactIn),
+			)
+
+			quotes.Direct.EndedAt = time.Now().UnixMilli()
 			return err
 		},
 	)
@@ -65,7 +72,15 @@ func (s *service) Quotes(ctx context.Context, input, output *instruments.Instrum
 	group.Go(
 		func() error {
 			quotes.Reverse.StartedAt = time.Now().UnixMilli()
-			quotes.Reverse.Quote, err = s.client.Quote(groupCtx, output, input, amount, jupyter.WithSwapMode(jupyter.ExactOut))
+
+			// fetch quote
+			quotes.Reverse.Quote, err = s.client.Quote(
+				groupCtx,
+				output.Address, input.Address,
+				amount,
+				jupyter.WithSwapMode(jupyter.ExactOut),
+			)
+
 			quotes.Reverse.EndedAt = time.Now().UnixMilli()
 			return err
 		},

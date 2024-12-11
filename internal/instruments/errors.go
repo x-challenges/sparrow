@@ -3,5 +3,5 @@ package instruments
 import "errors"
 
 var (
-	ErrNotFound = errors.New("not found")
+	ErrNotFound = errors.New("instrument not found")
 )

@@ -20,12 +20,12 @@ type Instrument struct {
 	Ticker     string `mapstructure:"ticker" json:"ticker" validate:"required"`
 	Decimals   int    `mapstructure:"decimals" json:"decimals" validate:"required"`
 	Tags       []Tag  `mapstructure:"tags" json:"tags" validate:"required" default:"[swap]"`
-	zeros      int64
+	Zeros      int64
 	zerosValue *big.Float
 }
 
 // QFromInt64
-func (i *Instrument) QFromInt64(amount int64) int64 { return amount * i.zeros }
+func (i *Instrument) QFromInt64(amount int64) int64 { return amount * i.Zeros }
 
 // QFromBigFloat
 func (i *Instrument) QFromBigFloat(amount *big.Float) int64 {

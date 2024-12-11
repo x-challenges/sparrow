@@ -1,6 +1,8 @@
 package instruments
 
 import (
+	"context"
+
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 
@@ -18,7 +20,11 @@ var Module = fx.Module(
 
 	// public usage
 	fx.Provide(
-		fx.Annotate(newService, fx.As(new(Service))),
+		fx.Annotate(
+			newService,
+			fx.As(new(Service)),
+			fx.OnStart(func(ctx context.Context, s Service) error { return s.(*service).Start(ctx) }),
+		),
 	),
 
 	// private usage

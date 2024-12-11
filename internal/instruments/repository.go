@@ -2,8 +2,6 @@ package instruments
 
 import (
 	"context"
-	"math"
-	"math/big"
 
 	"github.com/puzpuzpuz/xsync/v3"
 	"go.uber.org/zap"
@@ -13,6 +11,9 @@ import (
 type Repository interface {
 	// Get
 	Get(ctx context.Context, address string) (*Instrument, error)
+
+	// Store
+	Store(ctx context.Context, instrument *Instrument) error
 
 	// List
 	List(ctx context.Context) (Instruments, error)
@@ -27,34 +28,12 @@ type repository struct {
 var _ Repository = (*repository)(nil)
 
 // NewRepository
-func newRepository(logger *zap.Logger, config *Config) (*repository, error) {
-	var data = xsync.NewMapOf[string, *Instrument](
-		xsync.WithPresize(1000),
-	)
-
-	// load all available instruments from config to inmemory map
-	for _, instrument := range config.Instruments.Pool {
-		var zeros = int64(math.Pow10(instrument.Decimals))
-
-		data.Store(
-			// key
-			instrument.Address,
-
-			// data
-			&Instrument{
-				Address:    instrument.Address,
-				Ticker:     instrument.Ticker,
-				Decimals:   instrument.Decimals,
-				Tags:       instrument.Tags,
-				zeros:      zeros,
-				zerosValue: new(big.Float).SetInt64(zeros),
-			},
-		)
-	}
-
+func newRepository(logger *zap.Logger) (*repository, error) {
 	return &repository{
 		logger: logger,
-		data:   data,
+		data: xsync.NewMapOf[string, *Instrument](
+			xsync.WithPresize(5000),
+		),
 	}, nil
 }
 
@@ -71,6 +50,12 @@ func (rp *repository) Get(_ context.Context, address string) (*Instrument, error
 	}
 
 	return instrument, nil
+}
+
+// Store implements Service interface
+func (rp *repository) Store(_ context.Context, instrument *Instrument) error {
+	rp.data.Store(instrument.Address, instrument)
+	return nil
 }
 
 // List implements Repository interface

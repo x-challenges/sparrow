@@ -3,9 +3,13 @@ package instruments
 import (
 	"context"
 	"iter"
+	"math"
+	"math/big"
 	"slices"
 
 	"go.uber.org/zap"
+
+	"sparrow/internal/tokens"
 )
 
 // Iterator
@@ -24,25 +28,53 @@ type Service interface {
 
 	// Routable
 	Routable(ctx context.Context) (Iterator, error)
-
-	// Swappable
-	Swappable(ctx context.Context) (Iterator, error)
 }
 
 // Service interface implementation
 type service struct {
 	logger     *zap.Logger
+	tokens     tokens.Service
+	config     *Config
 	repository Repository
 }
 
 var _ Service = (*service)(nil)
 
 // NewService
-func newService(logger *zap.Logger, repository Repository) (*service, error) {
+func newService(logger *zap.Logger, tokens tokens.Service, config *Config, repository Repository) (*service, error) {
 	return &service{
 		logger:     logger,
+		tokens:     tokens,
+		config:     config,
 		repository: repository,
 	}, nil
+}
+
+// Start
+func (s *service) Start(ctx context.Context) error {
+	var err error
+
+	// load all available instruments from config to inmemory map
+	for _, instrument := range s.config.Instruments.Pool {
+		var (
+			zeros      = int64(math.Pow10(instrument.Decimals))
+			instrument = &Instrument{
+				Address:    instrument.Address,
+				Ticker:     instrument.Ticker,
+				Decimals:   instrument.Decimals,
+				Tags:       instrument.Tags,
+				Zeros:      zeros,
+				zerosValue: new(big.Float).SetInt64(zeros),
+			}
+		)
+
+		// store instrument into storage
+		if err = s.repository.Store(ctx, instrument); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 // Get implements Service interface
@@ -88,9 +120,4 @@ func (s *service) Base(ctx context.Context) (Iterator, error) {
 // Routable implements Service interface
 func (s *service) Routable(ctx context.Context) (Iterator, error) {
 	return s.Range(ctx, Route)
-}
-
-// Swappable implements Service interface
-func (s *service) Swappable(ctx context.Context) (Iterator, error) {
-	return s.Range(ctx, Swap)
 }
