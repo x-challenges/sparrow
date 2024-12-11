@@ -2,9 +2,9 @@ module sparrow
 
 go 1.23.4
 
-replace github.com/x-challenges/raven => ../../raven
+// replace github.com/x-challenges/raven => ../../raven
 
-require github.com/x-challenges/raven v0.1.15
+require github.com/x-challenges/raven v0.1.16
 
 require (
 	github.com/alitto/pond/v2 v2.1.5
