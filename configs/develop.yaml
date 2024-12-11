@@ -33,46 +33,42 @@ jupyter:
 instruments:
   # available instruments
   pool:
-    # - ticker: sol
-    #   address: So11111111111111111111111111111111111111112
-    #   decimals: 9
-
-    # - ticker: usdt
-    #   address: Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB
-    #   decimals: 6
-
     - ticker: usdc
       address: EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v
       decimals: 6
+      tags: [base, route, swap]
+
+    - ticker: usdt
+      address: Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB
+      decimals: 6
+      tags: [base, route, swap]
+
+    - ticker: sol
+      address: So11111111111111111111111111111111111111112
+      decimals: 9
+      tags: [route, swap]
 
     - ticker: jup
       address: JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN
       decimals: 6
+      tags: [route, swap]
 
     - ticker: jlp
       address: 27G8MtK7VtTcCHkpASjSDdkWWYfoqT6ggEuKidVJidD4
       decimals: 6
+      tags: [route, swap]
 
     - ticker: bonk
       address: DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263
       decimals: 5
+      tags: [route, swap]
 
 routes:
-  # amount range in route pool for each base_ccy
+  # amount range in route pool for each base intruments
   range: [1, 5]
 
   # using this step, decimals = 1000
   step: 1
-
-  base_ccy:
-    # USDC
-    - EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v
-
-    # USDT
-    # - Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB
-
-    # SOL
-    # - So11111111111111111111111111111111111111112
 
 server:
   # check quotes concurrency

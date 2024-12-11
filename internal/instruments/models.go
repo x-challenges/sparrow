@@ -4,11 +4,22 @@ import (
 	"math/big"
 )
 
+// Tag
+type Tag = string
+
+const (
+	Unspecified Tag = ""
+	Base        Tag = "base"
+	Route       Tag = "route"
+	Swap        Tag = "swap"
+)
+
 // Instrument
 type Instrument struct {
-	Address    string `json:"address" validate:"required"`
-	Ticker     string `json:"ticker" validate:"required"`
-	Decimals   int    `json:"decimals" validate:"required"`
+	Address    string `mapstructure:"address" json:"address" validate:"required"`
+	Ticker     string `mapstructure:"ticker" json:"ticker" validate:"required"`
+	Decimals   int    `mapstructure:"decimals" json:"decimals" validate:"required"`
+	Tags       []Tag  `mapstructure:"tags" json:"tags" validate:"required" default:"[swap]"`
 	zeros      int64
 	zerosValue *big.Float
 }

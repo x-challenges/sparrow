@@ -24,7 +24,6 @@ var Module = fx.Module(
 			newService,
 			fx.As(new(Service)),
 			fx.OnStart(func(ctx context.Context, s Service) error { return s.(*service).Start(ctx) }),
-			fx.OnStop(func(ctx context.Context, s Service) error { return s.(*service).Stop(ctx) }),
 		),
 	),
 

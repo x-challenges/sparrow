@@ -45,6 +45,7 @@ func newRepository(logger *zap.Logger, config *Config) (*repository, error) {
 				Address:    instrument.Address,
 				Ticker:     instrument.Ticker,
 				Decimals:   instrument.Decimals,
+				Tags:       instrument.Tags,
 				zeros:      zeros,
 				zerosValue: new(big.Float).SetInt64(zeros),
 			},
