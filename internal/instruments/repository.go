@@ -2,6 +2,7 @@ package instruments
 
 import (
 	"context"
+	"slices"
 
 	"github.com/puzpuzpuz/xsync/v3"
 	"go.uber.org/zap"
@@ -15,8 +16,11 @@ type Repository interface {
 	// Store
 	Store(ctx context.Context, instrument *Instrument) error
 
-	// List
-	List(ctx context.Context) (Instruments, error)
+	// Range
+	Range(ctx context.Context, tag Tag) Iterator
+
+	// Count
+	Count(ctx context.Context, tag Tag) int
 }
 
 // Repository interface implementation
@@ -58,16 +62,33 @@ func (rp *repository) Store(_ context.Context, instrument *Instrument) error {
 	return nil
 }
 
-// List implements Repository interface
-func (rp *repository) List(_ context.Context) (Instruments, error) {
-	var instruments = Instruments{}
+// Range implements Repository interface
+func (rp *repository) Range(ctx context.Context, tag Tag) Iterator {
+	return func(yield func(*Instrument) bool) {
+		rp.data.Range(func(_ string, value *Instrument) bool {
+			if tag != Unspecified && !slices.Contains(value.Tags, tag) {
+				return true
+			}
 
-	rp.data.Range(
-		func(_ string, value *Instrument) bool {
-			instruments = append(instruments, value)
+			if !yield(value) {
+				return true
+			}
+
 			return true
-		},
-	)
+		})
+	}
+}
 
-	return instruments, nil
+// Count implements Repository interface
+func (rp *repository) Count(_ context.Context, tag Tag) int {
+	var counter int
+
+	rp.data.Range(func(_ string, value *Instrument) bool {
+		if tag == Unspecified || slices.Contains(value.Tags, tag) {
+			counter++
+		}
+		return true
+	})
+
+	return counter
 }

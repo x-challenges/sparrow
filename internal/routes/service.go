@@ -43,22 +43,6 @@ func (s *service) Start(ctx context.Context) error {
 // Load
 func (s *service) load(ctx context.Context) error {
 	var (
-		baseInstruments  instruments.Iterator
-		routeInstruments instruments.Iterator
-		err              error
-	)
-
-	// take base instruments iterator
-	if baseInstruments, err = s.instruments.Base(ctx); err != nil {
-		return err
-	}
-
-	// take routable instruments iterator
-	if routeInstruments, err = s.instruments.Routable(ctx); err != nil {
-		return err
-	}
-
-	var (
 		step     = s.config.Routes.Step
 		from     = s.config.Routes.Range[0] * step
 		to       = s.config.Routes.Range[1] * step
@@ -66,10 +50,10 @@ func (s *service) load(ctx context.Context) error {
 	)
 
 	// iterate base instruments
-	for base := range baseInstruments {
+	for base := range s.instruments.Input(ctx) {
 
 		// iterate quote instruments
-		for quote := range routeInstruments {
+		for quote := range s.instruments.Routable(ctx) {
 
 			// skip
 			if base.Address == quote.Address {

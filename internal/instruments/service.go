@@ -4,7 +4,6 @@ import (
 	"context"
 	"math"
 	"math/big"
-	"slices"
 
 	"go.uber.org/zap"
 
@@ -16,14 +15,14 @@ type Service interface {
 	// Get
 	Get(ctx context.Context, address string) (*Instrument, error)
 
-	// All
-	All(ctx context.Context) (Iterator, error)
+	// Input
+	Input(ctx context.Context) Iterator
 
-	// Base
-	Base(ctx context.Context) (Iterator, error)
+	// Output
+	Output(ctx context.Context) Iterator
 
 	// Routable
-	Routable(ctx context.Context) (Iterator, error)
+	Routable(ctx context.Context) Iterator
 
 	// Addresses
 	Addresses(ctx context.Context) ([]string, error)
@@ -117,7 +116,12 @@ func (s *service) Start(ctx context.Context) error {
 		}
 	}
 
-	s.logger.Info("completed")
+	s.logger.Info("instruments loaded",
+		zap.Int("base", s.repository.Count(ctx, Base)),         // inputable
+		zap.Int("route", s.repository.Count(ctx, Route)),       // outputable
+		zap.Int("swap", s.repository.Count(ctx, Swap)),         // swappable
+		zap.Int("total", s.repository.Count(ctx, Unspecified)), // total
+	)
 
 	return nil
 }
@@ -127,59 +131,28 @@ func (s *service) Get(ctx context.Context, address string) (*Instrument, error) 
 	return s.repository.Get(ctx, address)
 }
 
-// Range
-func (s *service) Range(ctx context.Context, tag Tag) (Iterator, error) {
-	var (
-		all Instruments
-		err error
-	)
-
-	// take all instruments
-	if all, err = s.repository.List(ctx); err != nil {
-		return nil, err
-	}
-
-	return func(yield func(*Instrument) bool) {
-		for _, instrument := range all {
-			if tag != Unspecified && !slices.Contains(instrument.Tags, tag) {
-				continue
-			}
-
-			if !yield(instrument) {
-				return
-			}
-		}
-	}, nil
+// Input implements Service interface
+func (s *service) Input(ctx context.Context) Iterator {
+	return s.repository.Range(ctx, Base)
 }
 
-// All implements Service interface
-func (s *service) All(ctx context.Context) (Iterator, error) {
-	return s.Range(ctx, Unspecified)
-}
-
-// Base implements Service interface
-func (s *service) Base(ctx context.Context) (Iterator, error) {
-	return s.Range(ctx, Base)
+// Output implements Service interface
+func (s *service) Output(ctx context.Context) Iterator {
+	return s.repository.Range(ctx, Unspecified)
 }
 
 // Routable implements Service interface
-func (s *service) Routable(ctx context.Context) (Iterator, error) {
-	return s.Range(ctx, Route)
+func (s *service) Routable(ctx context.Context) Iterator {
+	return s.repository.Range(ctx, Route)
 }
 
 // Addresses
 func (s *service) Addresses(ctx context.Context) ([]string, error) {
 	var (
 		res = make([]string, 0, 1000)
-		all Instruments
-		err error
 	)
 
-	if all, err = s.repository.List(ctx); err != nil {
-		return nil, err
-	}
-
-	for _, inst := range all {
+	for inst := range s.repository.Range(ctx, Unspecified) {
 		res = append(res, inst.Address)
 	}
 

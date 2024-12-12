@@ -27,7 +27,7 @@ type service struct {
 	jupiter     jupiter.Client
 	instruments instruments.Service
 	config      *Config
-	rates       *Rates
+	repository  Repository
 
 	stop chan struct{}
 	done *sync.WaitGroup
@@ -40,7 +40,7 @@ func newService(
 	jupiter jupiter.Client,
 	instruments instruments.Service,
 	config *Config,
-	rates *Rates,
+	repository Repository,
 ) (*service, error) {
 	return &service{
 		logger:      logger,
@@ -48,7 +48,7 @@ func newService(
 		jupiter:     jupiter,
 		instruments: instruments,
 		config:      config,
-		rates:       rates,
+		repository:  repository,
 
 		stop: make(chan struct{}),
 		done: &sync.WaitGroup{},
@@ -65,7 +65,9 @@ func (s *service) Start(ctx context.Context) error {
 	// run background tasks for updates
 	s.done.Add(1)
 
-	go func(ctx context.Context) {
+	go func() {
+		var ctx = context.Background()
+
 		defer s.blocks.Close()
 		defer s.done.Done()
 
@@ -80,7 +82,7 @@ func (s *service) Start(ctx context.Context) error {
 				go s.Update(ctx)
 			}
 		}
-	}(ctx)
+	}()
 
 	return nil
 }
@@ -99,26 +101,10 @@ func (s *service) Stop(context.Context) error {
 
 // Init
 func (s *service) Init(ctx context.Context) error {
-	var (
-		inputIterator  instruments.Iterator
-		outputIterator instruments.Iterator
-		err            error
-	)
-
-	// take input instruments iterator
-	if inputIterator, err = s.instruments.Base(ctx); err != nil {
-		return err
-	}
-
-	// take output instruments iterator
-	if outputIterator, err = s.instruments.All(ctx); err != nil {
-		return err
-	}
-
-	// init storage
-	for input := range inputIterator {
-		for output := range outputIterator {
-			s.rates.Store(input.Address, output.Address, 0)
+	for input := range s.instruments.Input(ctx) {
+		for output := range s.instruments.Output(ctx) {
+			s.repository.Store(ctx, input.Address, output.Address, 0) // init direct exchange rate
+			s.repository.Store(ctx, output.Address, input.Address, 0) // init reverse exchange rate
 		}
 	}
 
@@ -129,16 +115,9 @@ func (s *service) Init(ctx context.Context) error {
 func (s *service) Update(ctx context.Context) {
 	var (
 		started         = time.Now()
-		inputIterator   instruments.Iterator
 		outputAddresses []string
 		err             error
 	)
-
-	// take input instruments iterator
-	if inputIterator, err = s.instruments.Base(ctx); err != nil {
-		s.logger.Error("take input instruments iterator failed", zap.Error(err))
-		return
-	}
 
 	// take output addresses as a slice
 	if outputAddresses, err = s.instruments.Addresses(ctx); err != nil {
@@ -146,10 +125,14 @@ func (s *service) Update(ctx context.Context) {
 		return
 	}
 
-	var group, groupCtx = errgroup.WithContext(ctx)
+	var (
+		group, groupCtx = errgroup.WithContext(ctx)
+		counter         = 0
+	)
 
-	for input := range inputIterator {
-		var chunks = slices.Chunk(outputAddresses, s.config.Prices.Loader.ChunkSize)
+	for input := range s.instruments.Input(ctx) {
+		var chunks = slices.Chunk(
+			outputAddresses, s.config.Prices.Loader.ChunkSize)
 
 		for chunk := range chunks {
 			group.Go(
@@ -163,7 +146,10 @@ func (s *service) Update(ctx context.Context) {
 
 					// store prices
 					for _, price := range prices.Data {
-						s.rates.Store(input.Address, price.ID, price.Price)
+						s.repository.Store(ctx, input.Address, price.ID, price.Price)   // direct rate
+						s.repository.Store(ctx, price.ID, input.Address, 1/price.Price) // reverse rate
+
+						counter += 2
 					}
 
 					return nil
@@ -175,9 +161,13 @@ func (s *service) Update(ctx context.Context) {
 	// wait all goroutines
 	if err = group.Wait(); err != nil {
 		s.logger.Error("update price failed", zap.Error(err))
+		return
 	}
 
-	s.logger.Info("price updates", zap.Duration("elapsed", time.Since(started)))
+	s.logger.Info("prices updated",
+		zap.Duration("elapsed", time.Since(started)),
+		zap.Int("count", counter),
+	)
 }
 
 // Exchange implements Service interface

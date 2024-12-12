@@ -31,7 +31,7 @@ var Module = fx.Module(
 	// private usage
 	fx.Provide(
 		fx.Private,
-		NewRates,
+		fx.Annotate(newRepository, fx.As(new(Repository))),
 	),
 
 	fx.Decorate(
