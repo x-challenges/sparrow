@@ -22,19 +22,20 @@ type Tokens []Token
 
 // QuoteRoutePlanSwapInfo
 type QuoteRoutePlanSwapInfo struct {
-	Ammkey     string `json:"ammKey"`
-	Label      string `json:"label"`
-	InputMint  string `json:"inputMint"`
-	OutputMint string `json:"outputMint"`
-	InAmount   int64  `json:"inAmount,string"`
-	OutAmount  int64  `json:"outAmount,string"`
-	FeeAmount  int64  `json:"feeAmount"`
+	// Ammkey     string `json:"ammKey"`
+	// Label      string `json:"label"`
+	// InputMint  string `json:"inputMint"`
+	// OutputMint string `json:"outputMint"`
+	// InAmount  int64  `json:"inAmount,string"`
+	// OutAmount int64  `json:"outAmount,string"`
+	FeeAmount int64  `json:"feeAmount,string"`
+	FeeMint   string `json:"feeMint"`
 }
 
 // QuoteRoutePlan
 type QuoteRoutePlan struct {
-	SwapInfo any `json:"swapInfo"`
-	Percent  int `json:"percent"`
+	SwapInfo QuoteRoutePlanSwapInfo `json:"swapInfo"`
+	Percent  int                    `json:"percent"`
 }
 
 // Quote
@@ -51,7 +52,7 @@ type Quote struct {
 type Price struct {
 	ID    string  `json:"id"`
 	Type  string  `json:"type"`
-	Price float32 `json:"price,string"`
+	Price float64 `json:"price,string"`
 }
 
 // Prices

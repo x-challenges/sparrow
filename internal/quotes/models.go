@@ -2,38 +2,33 @@ package quotes
 
 import (
 	"database/sql/driver"
+	"time"
 
 	"github.com/x-challenges/raven/kun/model"
 
+	"sparrow/internal/instruments"
 	"sparrow/internal/jupiter"
 )
 
 // Quote
-type Quote struct {
-	Quote     *jupiter.Quote `json:"quote"`
-	StartedAt int64          `json:"started_at"`
-	EndedAt   int64          `json:"ended_at"`
-}
+type Quote = jupiter.Quote
 
 // Quotes
 type Quotes struct {
-	Direct  *Quote `json:"direct"`
-	Reverse *Quote `json:"reverse"`
+	Direct  *Quote                  `json:"direct"`
+	Reverse *Quote                  `json:"reverse"`
+	Input   *instruments.Instrument `json:"-"`
+	Output  *instruments.Instrument `json:"-"`
+	Diff    int64                   `json:"diff"`
+	Profit  float32                 `json:"profit"`
+	Elapsed time.Duration           `json:"elapsed"`
 }
 
 func (q *Quotes) Scan(src interface{}) error  { return model.JSONScanner(q, src) }
 func (q Quotes) Value() (driver.Value, error) { return model.JSONValuer(q) }
 
-// Profit
-func (q *Quotes) Profit() (float32, bool) {
-	var yes = q.Direct.Quote.OutAmount > q.Reverse.Quote.InAmount
-
-	if yes {
-		return (1.0 - float32(q.Reverse.Quote.InAmount)/float32(q.Direct.Quote.OutAmount)) * 100.0, true
-	}
-
-	return 0, false
-}
+// HasProfit
+func (q *Quotes) HasProfit() bool { return q.Diff > 0 }
 
 // Model
 type Model struct {

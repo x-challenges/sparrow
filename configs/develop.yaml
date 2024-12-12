@@ -20,12 +20,20 @@ jupiter:
   token:
     host: https://tokens.jup.ag/tokens
 
+    # take tokens with selected tags from jupiter
+    tags:
+      - verified
+
   # price api
   price:
     host: https://api.jup.ag/price/v2
 
-  # quote api with round-robin LB
+  # quote api
   quote:
+    only_direct_routes: false
+    restrict_intermediate_tokens: true
+
+    # with round-robin LB
     hosts:
       - https://quote-api.jup.ag/v6/quote
       - https://public.jupiterapi.com/quote
@@ -38,49 +46,53 @@ instruments:
 
   # available instruments
   pool:
-    # usdc
-    - address: EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v
-      tags: [base, route, swap]
-
-    # usdt
-    - address: Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB
-      tags: [base, route, swap]
-
-    # usds
-    - address: USDSwr9ApdHk5bvJKMjzff41FfuX8bSxdKcR81vTwcA
-      tags: [route, swap]
-
     # wsol
     - address: So11111111111111111111111111111111111111112
-      tags: [route, swap]
+      tags: [base, route]
+
+    # usdc
+    - address: EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v
+      tags: [base, route]
+
+    # usdt
+    # - address: Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB
+    #   tags: [route]
+
+    # me
+    - address: MEFNBXixkEbait3xn9bkm8WsJzXtVsaJEn4c8Sam21u
+      tags: [route]
 
     # jup
     - address: JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN
-      tags: [route, swap]
+      tags: [route]
 
     # jlp
     - address: 27G8MtK7VtTcCHkpASjSDdkWWYfoqT6ggEuKidVJidD4
-      tags: [route, swap]
+      tags: [route]
 
     # bonk
     - address: DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263
-      tags: [route, swap]
+      tags: [route]
 
     # jito
     - address: J1toso1uCk3RLmjorhTtrVwY9HJ7X8V9yYac6Y7kGCPn
-      tags: [route, swap]
-
-    # wbtc
-    - address: 3NZ9JMVBmGAqocybic2c7LQCJScmgsAZ6vQqTDzcqmJh
-      tags: [route, swap]
-
-    # eth
-    - address: 7vfCXTUXx5WJV5JADk17DUJ4ksgau7utNKj4b963voxs
-      tags: [route, swap]
+      tags: [route]
 
     # ray
     - address: 4k3Dyjzvzp8eMZWUXbBCjEvwSkkk59S5iCNLY3QrkX6R
-      tags: [route, swap]
+      tags: [route]
+
+    # usds
+    # - address: USDSwr9ApdHk5bvJKMjzff41FfuX8bSxdKcR81vTwcA
+    #   tags: [route]
+
+    # wbtc
+    # - address: 3NZ9JMVBmGAqocybic2c7LQCJScmgsAZ6vQqTDzcqmJh
+    #   tags: [route]
+
+    # eth
+    # - address: 7vfCXTUXx5WJV5JADk17DUJ4ksgau7utNKj4b963voxs
+    #   tags: [route]
 
 routes:
   # amount range in route pool for each base intruments
@@ -92,11 +104,11 @@ routes:
 prices:
   loader:
     # split requests to jupiter api
-    chunk_size: 100
+    chunk_size: 99
 
 server:
   # check quotes concurrency
-  concurrency: 3
+  concurrency: 5
 
   # block producer interval
   ticker: 10s

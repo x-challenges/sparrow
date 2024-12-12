@@ -65,7 +65,20 @@ func (c *client) Tokens(_ context.Context) (Tokens, error) {
 	var res = fasthttp.AcquireResponse()
 	defer fasthttp.ReleaseResponse(res)
 
-	req.SetRequestURI(c.config.Jupiter.Token.Host + "?tags=verified")
+	// prepare strings builder for url
+	var uri strings.Builder
+	uri.Grow(256)
+
+	// write host
+	_, _ = uri.WriteString(c.config.Jupiter.Token.Host)
+
+	if tags := c.config.Jupiter.Token.Tags; len(tags) > 0 {
+		_, _ = uri.WriteString("?tags=" + strings.Join(tags, ","))
+	}
+
+	req.SetRequestURI(uri.String())
+	req.Header.SetMethod(fasthttp.MethodGet)
+
 	req.Header.Set("Connection", "keep-alive")
 
 	// do request
@@ -180,9 +193,15 @@ func (c *client) Quote(
 	_, _ = uri.WriteString("&outputMint=" + url.QueryEscape(output))
 	_, _ = uri.WriteString("&amount=" + url.QueryEscape(strconv.FormatInt(amount, 10)))
 
-	// some optimizations
-	_, _ = uri.WriteString("&restrictIntermediateTokens=true")
-	_, _ = uri.WriteString("&onlyDirectRoutes=false")
+	// use onlyDirectRoutes
+	if c.config.Jupiter.Quote.OnlyDirectRoutes {
+		_, _ = uri.WriteString("&onlyDirectRoutes=true")
+	}
+
+	// use restrictIntermediateTokens
+	if c.config.Jupiter.Quote.RestrictIntermediateTokens {
+		_, _ = uri.WriteString("&restrictIntermediateTokens=true")
+	}
 
 	// swap mode
 	switch options.SwapMode {
@@ -203,7 +222,17 @@ func (c *client) Quote(
 	}
 
 	// check http status
-	if st := res.StatusCode(); st != http.StatusOK {
+	switch st := res.StatusCode(); st {
+
+	case http.StatusOK:
+		break
+
+	// cant found any route for quote
+	case http.StatusBadRequest:
+		return nil, ErrRouteNotFound
+
+	// unexpected status code
+	default:
 		return nil, ErrUnexpectedStatusCode
 	}
 

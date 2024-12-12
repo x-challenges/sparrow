@@ -44,15 +44,15 @@ func (s *service) Start(ctx context.Context) error {
 func (s *service) load(ctx context.Context) error {
 	var (
 		step     = s.config.Routes.Step
-		from     = s.config.Routes.Range[0] * step
-		to       = s.config.Routes.Range[1] * step
+		from     = s.config.Routes.Range[0]
+		to       = s.config.Routes.Range[1]
 		priority = 0
 	)
 
-	// iterate base instruments
+	// iterate input instruments
 	for base := range s.instruments.Input(ctx) {
 
-		// iterate quote instruments
+		// iterate routable instruments
 		for quote := range s.instruments.Routable(ctx) {
 
 			// skip
@@ -61,7 +61,7 @@ func (s *service) load(ctx context.Context) error {
 			}
 
 			// iterate all price range
-			for amount := from; amount < to; amount++ {
+			for amount := from; amount < to; amount += step {
 
 				// skip if zero
 				if amount == 0 {

@@ -32,6 +32,9 @@ type Instrument struct {
 // QFromInt64
 func (i *Instrument) QFromInt64(amount int64) int64 { return amount * i.Zeros }
 
+// FFromInt64
+func (i *Instrument) FFromInt64(amount int64) float64 { return float64(amount) / float64(i.Zeros) }
+
 // QFromBigFloat
 func (i *Instrument) QFromBigFloat(amount *big.Float) int64 {
 	var res, _ = new(big.Float).Mul(amount, i.zerosValue).Int64()

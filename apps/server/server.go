@@ -18,14 +18,13 @@ import (
 // Server
 type Server struct {
 	logger *zap.Logger
-	pool   pond.ResultPool[*quotes.Quotes]
 	quotes quotes.Service
 	routes routes.Service
 	blocks block.Listener
 	prices prices.Service
 
 	config *Config
-	cancel context.CancelFunc
+	pool   pond.ResultPool[*quotes.Quotes]
 
 	stop chan struct{}
 	done *sync.WaitGroup
@@ -130,8 +129,8 @@ func (s *Server) Process(ctx context.Context, block *block.Block) {
 
 		// enrich logs
 		var logger = logger.With(
-			zap.String("base", input.Address),
-			zap.String("quote", output.Address),
+			zap.String("input", input.Address),
+			zap.String("output", output.Address),
 			zap.Int64("amount", amount),
 		)
 
@@ -139,25 +138,28 @@ func (s *Server) Process(ctx context.Context, block *block.Block) {
 		group.Submit(
 			func() *quotes.Quotes {
 				var (
-					quotes *quotes.Quotes
-					err    error
+					qs  *quotes.Quotes
+					err error
 				)
 
 				// take quotes
-				if quotes, err = s.quotes.Quotes(groupCtx, input, output, amount); err != nil {
-					logger.Error("take quotes failed", zap.Error(err))
+				if qs, err = s.quotes.Quotes(groupCtx, input, output, amount); err != nil {
+					if !errors.Is(err, quotes.ErrQuoteNotFound) {
+						logger.Error("take quotes failed", zap.Error(err))
+					}
 					return nil
 				}
 
 				// check profit
-				if profit, yes := quotes.Profit(); yes {
-					logger.Info("quotes has profit", zap.Float32("profit", profit))
-
-					return quotes
+				if !qs.HasProfit() {
+					return nil
 				}
 
-				// return only profitable quotes
-				return nil
+				logger.Info("quotes has profit",
+					zap.Any("quotes", qs),
+				)
+
+				return qs
 			},
 		)
 	}

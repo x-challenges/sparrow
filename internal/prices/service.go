@@ -17,7 +17,7 @@ import (
 // Service
 type Service interface {
 	// Exchange
-	Exchange(ctx context.Context, input, output string, amount int64) (int64, error)
+	Exchange(ctx context.Context, input, output string, amount float64) (float64, error)
 }
 
 // Service interface implementation
@@ -131,8 +131,10 @@ func (s *service) Update(ctx context.Context) {
 	)
 
 	for input := range s.instruments.Input(ctx) {
-		var chunks = slices.Chunk(
-			outputAddresses, s.config.Prices.Loader.ChunkSize)
+		var (
+			input  = *input
+			chunks = slices.Chunk(outputAddresses, s.config.Prices.Loader.ChunkSize)
+		)
 
 		for chunk := range chunks {
 			group.Go(
@@ -171,6 +173,16 @@ func (s *service) Update(ctx context.Context) {
 }
 
 // Exchange implements Service interface
-func (s *service) Exchange(_ context.Context, _, _ string, _ int64) (int64, error) {
-	return 0, nil
+func (s *service) Exchange(ctx context.Context, input, output string, amount float64) (float64, error) {
+	var (
+		rate float64
+		err  error
+	)
+
+	// try to load exchange rate
+	if rate, err = s.repository.Load(ctx, input, output); err != nil {
+		return 0, err
+	}
+
+	return amount * rate, nil
 }

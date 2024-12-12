@@ -10,16 +10,16 @@ import (
 // Repository
 type Repository interface {
 	// Load
-	Load(ctx context.Context, input, output string) (float32, error)
+	Load(ctx context.Context, input, output string) (float64, error)
 
 	// Store
-	Store(ctx context.Context, input, output string, value float32)
+	Store(ctx context.Context, input, output string, value float64)
 }
 
 // Repository interface implementation
 type repository struct {
 	logger *zap.Logger
-	data   *xsync.MapOf[string, float32]
+	data   *xsync.MapOf[string, float64]
 }
 
 var _ Repository = (*repository)(nil)
@@ -28,7 +28,7 @@ var _ Repository = (*repository)(nil)
 func newRepository(logger *zap.Logger) (*repository, error) {
 	return &repository{
 		logger: logger,
-		data: xsync.NewMapOf[string, float32](
+		data: xsync.NewMapOf[string, float64](
 			xsync.WithPresize(5000),
 			xsync.WithGrowOnly(),
 		),
@@ -41,12 +41,12 @@ func (rp *repository) Key(input, output string) string {
 }
 
 // Store implements Repository interface
-func (rp *repository) Store(_ context.Context, input, output string, value float32) {
+func (rp *repository) Store(_ context.Context, input, output string, value float64) {
 	rp.data.Store(rp.Key(input, output), value)
 }
 
 // Load implements Repository interface
-func (rp *repository) Load(_ context.Context, input, output string) (float32, error) {
+func (rp *repository) Load(_ context.Context, input, output string) (float64, error) {
 	if res, exist := rp.data.Load(rp.Key(input, output)); exist {
 		return res, nil
 	}
