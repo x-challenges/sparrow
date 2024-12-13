@@ -43,3 +43,25 @@ jobs:
           provenance: false
           tags: |
             ${{ env.image_path }}/app:${{ env.image_tag }}
+
+  build-jupiter:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: yc-actions/yc-cr-login@v2
+        with:
+          yc-sa-json-credentials: ${{ secrets.YC_SA_JSON_CREDENTIALS }}
+
+      - uses: docker/build-push-action@v6
+        id: build-docker
+        with:
+          context: .
+          file: ./dockers/Dockerfile.jupiter
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          push: true
+          provenance: false
+          tags: |
+            ${{ env.image_path }}/jupiter:${{ env.image_tag }}
