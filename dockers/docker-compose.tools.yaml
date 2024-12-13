@@ -1,0 +1,39 @@
+networks:
+  monitoring:
+    driver: bridge
+
+volumes:
+  prometheus-storage: {}
+  grafana-storage: {}
+
+x-common: &common
+  profiles:
+    - tools
+
+services:
+  prometheus:
+    << : [ *common ]
+    image: prom/prometheus:v3.0.0
+    restart: always
+    ports:
+      - 9090:9090
+    volumes:
+      - ./prometheus:/etc/prometheus
+      - prometheus-storage:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/config.yaml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=24h'
+    networks:
+      - monitoring
+
+  grafana:
+    << : [ *common ]
+    image: grafana/grafana:11.4.0
+    restart: always
+    ports:
+      - 3000:3000
+    volumes:
+      - grafana-storage:/var/lib/grafana
+    networks:
+      - monitoring

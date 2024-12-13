@@ -10,3 +10,4 @@ include:
   - path:
     - docker-compose.base.yaml
     - docker-compose.jupiter.yaml
+    - docker-compose.tools.yaml
