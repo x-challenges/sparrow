@@ -3,12 +3,15 @@ FROM --platform=linux/amd64 debian:bookworm-slim
 ENV RUST_LOG=info
 
 ENV RPC_URL=https://solana-rpc.publicnode.com
-ENV YELLOWSTONE_GRPC_ENDPOINT=solana-yellowstone-grpc.publicnode.com:443
 
 ENV MARKET_MODE=file
 ENV MARKET_CACHE=market-cache.json
 
+ENV ALLOW_CIRCULAR_ARBITRAGE=1
 ENV SNAPSHOT_POLL_INTERVAL_MS=500
+
+ENV WEBSERVER_THREAD_COUNT=2
+ENV TOTAL_THREAD_COUNT=8
 
 RUN apt-get update && apt-get install unzip openssl ca-certificates jq -y
 
