@@ -1,0 +1,21 @@
+x-common-base: &common-base
+  restart: always
+  networks:
+    - backend
+
+services:
+  jupiter:
+    image: cr.yandex/crp53e20ig6qqj16t4k5/jupiter:${IMAGE_TAG:-develop}
+    build:
+      context: ../.
+      dockerfile: dockers/Dockerfile.jupiter
+      args:
+        DOCKER_BUILDKIT: 1
+    restart: always
+    ports:
+      - 8081:8080
+    networks:
+      - backend
+    env_file:
+      - path: ../.env
+        required: false

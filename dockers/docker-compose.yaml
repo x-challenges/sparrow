@@ -1,4 +1,4 @@
-name: viper
+name: sparrow
 
 networks:
   backend:
@@ -9,5 +9,4 @@ networks:
 include:
   - path:
     - docker-compose.base.yaml
-    - docker-compose.tools.yaml
-    - docker-compose.redis.yaml
+    - docker-compose.jupiter.yaml
