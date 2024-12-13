@@ -18,7 +18,8 @@ fasthttp:
 jupiter:
   # token api
   token:
-    host: https://tokens.jup.ag/tokens
+    hosts:
+      - https://tokens.jup.ag/tokens
 
     # take tokens with selected tags from jupiter
     tags:
@@ -26,7 +27,8 @@ jupiter:
 
   # price api
   price:
-    host: https://api.jup.ag/price/v2
+    hosts:
+      - https://api.jup.ag/price/v2
 
   # quote api
   quote:

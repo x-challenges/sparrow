@@ -4,12 +4,12 @@ package jupiter
 type Config struct {
 	Jupiter struct {
 		Token struct {
-			Host string   `mapstructure:"host" validate:"required"`
-			Tags []string `mapstructure:"tags"`
+			Hosts []string `mapstructure:"host" validate:"required"`
+			Tags  []string `mapstructure:"tags"`
 		} `mapstructure:"token"`
 
 		Price struct {
-			Host string `mapstructure:"host" validate:"required"`
+			Hosts []string `mapstructure:"host" validate:"required"`
 		} `mapstructure:"price"`
 
 		Quote struct {

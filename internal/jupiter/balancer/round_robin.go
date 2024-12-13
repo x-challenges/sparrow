@@ -1,19 +1,21 @@
-package jupiter
+package balancer
 
 import (
 	"sync"
 )
 
 // Balancer
-type Balancer struct {
+type RoundRobin struct {
 	servers []string
 	index   int32
 	mu      *sync.Mutex
 }
 
-// NewBalancer
-func NewBalancer(servers ...string) *Balancer {
-	return &Balancer{
+var _ Balancer = (*RoundRobin)(nil)
+
+// NewRoundRobin
+func NewRoundRobin(servers ...string) *RoundRobin {
+	return &RoundRobin{
 		servers: servers,
 		index:   0,
 		mu:      &sync.Mutex{},
@@ -21,7 +23,7 @@ func NewBalancer(servers ...string) *Balancer {
 }
 
 // Next
-func (b *Balancer) Next() string {
+func (b *RoundRobin) Next() string {
 	b.mu.Lock()
 	defer b.mu.Unlock()
 

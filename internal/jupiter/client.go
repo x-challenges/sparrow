@@ -12,6 +12,8 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/x-challenges/raven/common/json"
+
+	"sparrow/internal/jupiter/balancer"
 )
 
 // Client
@@ -37,7 +39,9 @@ type client struct {
 	client *fasthttp.Client
 	config *Config
 
-	quoteHosts *Balancer
+	tokenHosts balancer.Balancer
+	priceHosts balancer.Balancer
+	quoteHosts balancer.Balancer
 }
 
 var _ Client = (*client)(nil)
@@ -48,7 +52,9 @@ func newClient(logger *zap.Logger, fclient *fasthttp.Client, config *Config) (*c
 		logger:     logger,
 		client:     fclient,
 		config:     config,
-		quoteHosts: NewBalancer(config.Jupiter.Quote.Hosts...),
+		tokenHosts: balancer.NewBalancer(config.Jupiter.Token.Hosts...),
+		priceHosts: balancer.NewBalancer(config.Jupiter.Price.Hosts...),
+		quoteHosts: balancer.NewBalancer(config.Jupiter.Quote.Hosts...),
 	}, nil
 }
 
@@ -70,7 +76,7 @@ func (c *client) Tokens(_ context.Context) (Tokens, error) {
 	uri.Grow(256)
 
 	// write host
-	_, _ = uri.WriteString(c.config.Jupiter.Token.Host)
+	_, _ = uri.WriteString(c.tokenHosts.Next())
 
 	if tags := c.config.Jupiter.Token.Tags; len(tags) > 0 {
 		_, _ = uri.WriteString("?tags=" + strings.Join(tags, ","))
@@ -121,7 +127,7 @@ func (c *client) Prices(_ context.Context, input string, outputs ...string) (*Pr
 	uri.Grow(256)
 
 	// write host
-	_, _ = uri.WriteString(c.config.Jupiter.Price.Host)
+	_, _ = uri.WriteString(c.priceHosts.Next())
 
 	// write params
 	_, _ = uri.WriteString("?vsToken=" + input)
