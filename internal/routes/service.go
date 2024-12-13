@@ -13,6 +13,9 @@ import (
 type Service interface {
 	// Range
 	Range() Iterator
+
+	// Count
+	Count() int
 }
 
 // Service interface implementation
@@ -89,6 +92,7 @@ func (s *service) load(ctx context.Context) error {
 }
 
 // Range implements Service interface
-func (s *service) Range() Iterator {
-	return s.pool.Range()
-}
+func (s *service) Range() Iterator { return s.pool.Range() }
+
+// Count implements Service interface
+func (s *service) Count() int { return s.pool.Count() }

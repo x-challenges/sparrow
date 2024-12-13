@@ -1,8 +1,16 @@
-x-common-base: &common-base
-  restart: always
-  networks:
-    - backend
-
-volumes: {}
-
-services: {}
+services:
+  app:
+    image: cr.yandex/crp53e20ig6qqj16t4k5/app:${IMAGE_TAG:-develop}
+    build:
+      context: ../.
+      dockerfile: dockers/Dockerfile.app
+      args:
+        DOCKER_BUILDKIT: 1
+    restart: always
+    env_file:
+      - path: ../.env
+        required: false
+    command:
+      - server
+      - --config=/app/configs/develop.yaml
+      - --config=/app/configs/local.yaml

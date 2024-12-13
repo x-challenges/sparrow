@@ -50,4 +50,6 @@ COPY --from=build /tmp/server ./
 
 RUN chmod a+x /app/server
 
-CMD ["/app/server"]
+EXPOSE 8080
+
+ENTRYPOINT ["/app/server"]

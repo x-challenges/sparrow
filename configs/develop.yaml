@@ -9,11 +9,12 @@ ydb:
 
 fasthttp:
   client:
-    max_conns_per_host: 1024
-    max_conn_duration: 1m
-    max_conn_wait_timeout: 5s
-    read_timeout: 5s
-    write_timeout: 5s
+    host:
+      max_conns_per_host: 1024
+      max_conn_duration: 5m
+      max_conn_wait_timeout: 5s
+      read_timeout: 1s
+      write_timeout: 1s
 
 jupiter:
   # token api
@@ -32,7 +33,7 @@ jupiter:
 
   # quote api
   quote:
-    only_direct_routes: false
+    only_direct_routes: true
     restrict_intermediate_tokens: true
 
     # with round-robin LB

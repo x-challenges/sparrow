@@ -8,10 +8,10 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/valyala/fasthttp"
 	"go.uber.org/zap"
 
 	"github.com/x-challenges/raven/common/json"
+	"github.com/x-challenges/raven/modules/fasthttp"
 
 	"sparrow/internal/jupiter/balancer"
 )
@@ -83,9 +83,6 @@ func (c *client) Tokens(_ context.Context) (Tokens, error) {
 	}
 
 	req.SetRequestURI(uri.String())
-	req.Header.SetMethod(fasthttp.MethodGet)
-
-	req.Header.Set("Connection", "keep-alive")
 
 	// do request
 	if err = c.client.Do(req, res); err != nil {
@@ -134,9 +131,6 @@ func (c *client) Prices(_ context.Context, input string, outputs ...string) (*Pr
 	_, _ = uri.WriteString("&ids=" + strings.Join(outputs, ","))
 
 	req.SetRequestURI(uri.String())
-	req.Header.SetMethod(fasthttp.MethodGet)
-
-	req.Header.Set("Connection", "keep-alive")
 
 	// do request
 	if err = c.client.Do(req, res); err != nil {
@@ -218,9 +212,6 @@ func (c *client) Quote(
 	}
 
 	req.SetRequestURI(uri.String())
-	req.Header.SetMethod(fasthttp.MethodGet)
-
-	req.Header.Set("Connection", "keep-alive")
 
 	// do request
 	if err = c.client.Do(req, res); err != nil {

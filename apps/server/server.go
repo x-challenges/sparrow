@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"sync"
+	"sync/atomic"
+	"time"
 
 	"github.com/alitto/pond/v2"
 	"go.uber.org/fx"
@@ -111,6 +113,8 @@ func (s *Server) Stop(context.Context) error {
 // Process
 func (s *Server) Process(ctx context.Context, block *block.Block) {
 	var (
+		started          = time.Now()
+		counter          int32
 		groupCtx, cancel = context.WithTimeout(ctx, s.config.Server.Deadline)
 		group            = s.pool.NewGroupContext(groupCtx)
 	)
@@ -121,25 +125,29 @@ func (s *Server) Process(ctx context.Context, block *block.Block) {
 
 	// iterate by available routes
 	for route := range s.routes.Range() {
-		var (
-			input  = route.Base
-			output = route.Quote
-			amount = route.Base.QFromBigFloat(route.Amount)
-		)
-
-		// enrich logs
-		var logger = logger.With(
-			zap.String("input", input.Address),
-			zap.String("output", output.Address),
-			zap.Int64("amount", amount),
-		)
+		var route = *route
 
 		// launch task in a group
 		group.Submit(
 			func() *quotes.Quotes {
+				atomic.AddInt32(&counter, 1)
+
+				var (
+					input  = route.Base
+					output = route.Quote
+					amount = route.Base.QFromBigFloat(route.Amount)
+				)
+
 				var (
 					qs  *quotes.Quotes
 					err error
+				)
+
+				// enrich logs
+				var logger = logger.With(
+					zap.String("input", input.Address),
+					zap.String("output", output.Address),
+					zap.Int64("amount", amount),
 				)
 
 				// take quotes
@@ -190,5 +198,8 @@ func (s *Server) Process(ctx context.Context, block *block.Block) {
 		}
 	}(stats...)
 
-	logger.Info("process completed")
+	logger.Info("process completed",
+		zap.Int32("routes", counter),
+		zap.Duration("elapsed", time.Since(started)),
+	)
 }

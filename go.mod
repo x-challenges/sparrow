@@ -4,7 +4,7 @@ go 1.23.4
 
 // replace github.com/x-challenges/raven => ../../raven
 
-require github.com/x-challenges/raven v0.1.16
+require github.com/x-challenges/raven v0.1.17
 
 require (
 	github.com/alitto/pond/v2 v2.1.5
@@ -13,11 +13,12 @@ require (
 	github.com/joho/godotenv v1.5.1
 	github.com/puzpuzpuz/xsync/v3 v3.4.0
 	github.com/spf13/cobra v1.8.1
-	github.com/valyala/fasthttp v1.57.0
 	go.uber.org/fx v1.23.0
 	go.uber.org/zap v1.27.0
 	gorm.io/gorm v1.25.12
 )
+
+require github.com/valyala/fasthttp v1.57.0 // indirect
 
 require (
 	github.com/andybalholm/brotli v1.1.1 // indirect

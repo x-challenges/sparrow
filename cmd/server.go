@@ -17,6 +17,7 @@ var serverCmd = &cobra.Command{
 	Use: "server",
 	Run: func(_ *cobra.Command, _ []string) {
 		app := fx.New(
+			// fx.NopLogger,
 			fx.RecoverFromPanics(),
 
 			// raven

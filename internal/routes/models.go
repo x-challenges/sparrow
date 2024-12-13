@@ -101,3 +101,6 @@ func (p *Pool) Range() Iterator {
 		}
 	}
 }
+
+// Count
+func (p *Pool) Count() int { return len(p.index) }

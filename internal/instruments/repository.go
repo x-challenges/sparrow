@@ -2,6 +2,8 @@ package instruments
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"slices"
 
 	"github.com/puzpuzpuz/xsync/v3"
@@ -50,7 +52,7 @@ func (rp *repository) Get(_ context.Context, address string) (*Instrument, error
 
 	// try load
 	if instrument, exists = rp.data.Load(address); !exists {
-		return nil, ErrNotFound
+		return nil, errors.Join(ErrNotFound, fmt.Errorf("address=%s", address))
 	}
 
 	return instrument, nil
@@ -63,7 +65,7 @@ func (rp *repository) Store(_ context.Context, instrument *Instrument) error {
 }
 
 // Range implements Repository interface
-func (rp *repository) Range(ctx context.Context, tag Tag) Iterator {
+func (rp *repository) Range(_ context.Context, tag Tag) Iterator {
 	return func(yield func(*Instrument) bool) {
 		rp.data.Range(func(_ string, value *Instrument) bool {
 			if tag != Unspecified && !slices.Contains(value.Tags, tag) {
