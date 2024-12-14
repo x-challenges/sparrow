@@ -5,6 +5,8 @@ import (
 	"errors"
 	"time"
 
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/metric"
 	"go.uber.org/zap"
 	"golang.org/x/sync/errgroup"
 
@@ -55,12 +57,25 @@ func newService(
 // Quotes implements Service interface
 func (s *service) Quotes(ctx context.Context, input, output *instruments.Instrument, amount int64) (*Quotes, error) {
 	var (
-		start           = time.Now()
+		started         = time.Now()
 		quotes          = new(Quotes)
 		group, groupCtx = errgroup.WithContext(ctx)
 		exchanged       float64
 		err             error
 	)
+
+	defer func() {
+		var success = err != nil
+
+		requestLatency.Record(ctx, time.Since(started).Milliseconds(),
+			metric.WithAttributes(
+				attribute.String("input", input.Address),
+				attribute.String("output", output.Address),
+				attribute.Bool("success", success),
+				attribute.Bool("has_profit", quotes.HasProfit()),
+			),
+		)
+	}()
 
 	// exchange
 	if exchanged, err = s.prices.Exchange(groupCtx, input.Address, output.Address, float64(amount)); err != nil {
@@ -107,7 +122,7 @@ func (s *service) Quotes(ctx context.Context, input, output *instruments.Instrum
 	quotes.Profit = (1.0 - float32(quotes.Direct.InAmount)/float32(quotes.Reverse.OutAmount)) * 100.0
 
 	// elapsed times
-	quotes.Elapsed = time.Since(start)
+	quotes.Elapsed = time.Since(started)
 
 	return quotes, nil
 }
