@@ -3,11 +3,15 @@ package jupiter
 import (
 	"bytes"
 	"context"
+	"errors"
 	"net/http"
 	"net/url"
 	"strconv"
 	"strings"
+	"time"
 
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/metric"
 	"go.uber.org/zap"
 
 	"github.com/x-challenges/raven/common/json"
@@ -58,12 +62,20 @@ func newClient(logger *zap.Logger, fclient *fasthttp.Client, config *Config) (*c
 	}, nil
 }
 
-// Tokens implements Client interface
-func (c *client) Tokens(_ context.Context) (Tokens, error) {
+// Request
+func (c *client) getRequest(ctx context.Context, host, getParams string, resp any) error {
 	var (
-		tokens Tokens
-		err    error
+		started    = time.Now()
+		statusCode int
+		err        error
 	)
+
+	defer func() {
+		requestLatency.Record(ctx, int64(time.Since(started)), metric.WithAttributes(
+			attribute.String("host", host),
+			attribute.Int("status_code", statusCode),
+		))
+	}()
 
 	var req = fasthttp.AcquireRequest()
 	defer fasthttp.ReleaseRequest(req)
@@ -71,31 +83,52 @@ func (c *client) Tokens(_ context.Context) (Tokens, error) {
 	var res = fasthttp.AcquireResponse()
 	defer fasthttp.ReleaseResponse(res)
 
+	req.SetRequestURI(host + getParams)
+
+	// do request
+	if err = c.client.Do(req, res); err != nil {
+		return err
+	}
+
+	// remap errors
+	switch statusCode = res.StatusCode(); statusCode {
+	case http.StatusOK:
+		break
+	case http.StatusBadRequest:
+		err = ErrNotFoundStatusCode
+	default:
+		err = ErrUnexpectedStatusCode
+	}
+
+	if err != nil {
+		return err
+	}
+
+	// parse json
+	if err = json.NewDecoder(bytes.NewBuffer(res.Body())).Decode(resp); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// Tokens implements Client interface
+func (c *client) Tokens(ctx context.Context) (Tokens, error) {
+	var (
+		tokens Tokens
+		err    error
+	)
+
 	// prepare strings builder for url
 	var uri strings.Builder
-	uri.Grow(256)
-
-	// write host
-	_, _ = uri.WriteString(c.tokenHosts.Next())
+	uri.Grow(128)
 
 	if tags := c.config.Jupiter.Token.Tags; len(tags) > 0 {
 		_, _ = uri.WriteString("?tags=" + strings.Join(tags, ","))
 	}
 
-	req.SetRequestURI(uri.String())
-
-	// do request
-	if err = c.client.Do(req, res); err != nil {
-		return nil, err
-	}
-
-	// check http status
-	if st := res.StatusCode(); st != http.StatusOK {
-		return nil, ErrUnexpectedStatusCode
-	}
-
-	// parse json
-	if err = json.NewDecoder(bytes.NewBuffer(res.Body())).Decode(&tokens); err != nil {
+	// make request
+	if err = c.getRequest(ctx, c.tokenHosts.Next(), uri.String(), &tokens); err != nil {
 		return nil, err
 	}
 
@@ -105,45 +138,22 @@ func (c *client) Tokens(_ context.Context) (Tokens, error) {
 }
 
 // Prices implement Client interface
-func (c *client) Prices(_ context.Context, input string, outputs ...string) (*Prices, error) {
+func (c *client) Prices(ctx context.Context, input string, outputs ...string) (*Prices, error) {
 	var (
 		prices *Prices
 		err    error
 	)
 
-	// acquire fasthttp request
-	var req = fasthttp.AcquireRequest()
-	defer fasthttp.ReleaseRequest(req)
-
-	// acquire fasthttp response
-	var res = fasthttp.AcquireResponse()
-	defer fasthttp.ReleaseResponse(res)
-
 	// prepare strings builder for url
 	var uri strings.Builder
-	uri.Grow(256)
-
-	// write host
-	_, _ = uri.WriteString(c.priceHosts.Next())
+	uri.Grow(128)
 
 	// write params
 	_, _ = uri.WriteString("?vsToken=" + input)
 	_, _ = uri.WriteString("&ids=" + strings.Join(outputs, ","))
 
-	req.SetRequestURI(uri.String())
-
-	// do request
-	if err = c.client.Do(req, res); err != nil {
-		return nil, err
-	}
-
-	// check http status
-	if st := res.StatusCode(); st != http.StatusOK {
-		return nil, ErrUnexpectedStatusCode
-	}
-
-	// parse json
-	if err = json.NewDecoder(bytes.NewBuffer(res.Body())).Decode(&prices); err != nil {
+	// make request
+	if err = c.getRequest(ctx, c.priceHosts.Next(), uri.String(), &prices); err != nil {
 		return nil, err
 	}
 
@@ -154,7 +164,7 @@ func (c *client) Prices(_ context.Context, input string, outputs ...string) (*Pr
 
 // Quote implements Client interface
 func (c *client) Quote(
-	_ context.Context,
+	ctx context.Context,
 	input, output string,
 	amount int64,
 	opts ...QuoteOptionFunc,
@@ -173,20 +183,9 @@ func (c *client) Quote(
 		zap.Any("options", options),
 	)
 
-	// acquire fasthttp request
-	var req = fasthttp.AcquireRequest()
-	defer fasthttp.ReleaseRequest(req)
-
-	// acquire fasthttp response
-	var res = fasthttp.AcquireResponse()
-	defer fasthttp.ReleaseResponse(res)
-
 	// prepare strings builder for url
 	var uri strings.Builder
 	uri.Grow(256)
-
-	// write host
-	_, _ = uri.WriteString(c.quoteHosts.Next())
 
 	// write params
 	_, _ = uri.WriteString("?inputMint=" + url.QueryEscape(input))
@@ -211,30 +210,11 @@ func (c *client) Quote(
 		_, _ = uri.WriteString("&swapMode=ExactOut")
 	}
 
-	req.SetRequestURI(uri.String())
-
-	// do request
-	if err = c.client.Do(req, res); err != nil {
-		return nil, err
-	}
-
-	// check http status
-	switch st := res.StatusCode(); st {
-
-	case http.StatusOK:
-		break
-
-	// cant found any route for quote
-	case http.StatusBadRequest:
-		return nil, ErrRouteNotFound
-
-	// unexpected status code
-	default:
-		return nil, ErrUnexpectedStatusCode
-	}
-
-	// parse json
-	if err = json.NewDecoder(bytes.NewBuffer(res.Body())).Decode(&quote); err != nil {
+	// make request
+	if err = c.getRequest(ctx, c.quoteHosts.Next(), uri.String(), &quote); err != nil {
+		if errors.Is(err, ErrNotFoundStatusCode) {
+			return nil, ErrRouteNotFound
+		}
 		return nil, err
 	}
 

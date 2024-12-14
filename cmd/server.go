@@ -7,7 +7,10 @@ import (
 	"github.com/x-challenges/raven/modules/config"
 	"github.com/x-challenges/raven/modules/fasthttp"
 	"github.com/x-challenges/raven/modules/gorm"
+	"github.com/x-challenges/raven/modules/http"
 	"github.com/x-challenges/raven/modules/logger"
+	"github.com/x-challenges/raven/modules/monitoring"
+	"github.com/x-challenges/raven/modules/worker"
 	"github.com/x-challenges/raven/modules/yandex/ydb"
 
 	"sparrow/apps/server"
@@ -23,6 +26,9 @@ var serverCmd = &cobra.Command{
 			// raven
 			config.Module(),
 			logger.Module,
+			monitoring.Module,
+			http.Module,
+			worker.Module,
 			fasthttp.Module,
 			gorm.Module,
 			ydb.Module,

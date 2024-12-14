@@ -3,6 +3,13 @@ debug: false
 logger:
   level: info
 
+monitoring:
+  sentry: {}
+  metrics: {}
+
+http:
+  bind: 0.0.0.0:8080
+
 ydb:
   dsn: grpcs://ydb.serverless.yandexcloud.net:2135/?database=/ru-central1/b1gcm11knnnopur9fil6/etn4hff7q981ib0o7mnl
   access_token_credentials:
@@ -14,7 +21,9 @@ fasthttp:
       max_conn_duration: 5m
       max_conn_wait_timeout: 5s
       read_timeout: 1s
+      read_buffer_size: 4096
       write_timeout: 1s
+      write_buffer_size: 4096
 
 jupiter:
   # token api
@@ -40,6 +49,28 @@ jupiter:
     hosts:
       - https://quote-api.jup.ag/v6/quote
       - https://public.jupiterapi.com/quote
+
+server:
+  # check quotes concurrency
+  concurrency: 5
+
+  # block producer interval
+  ticker: 10s
+
+  # timeout deadline for group task
+  deadline: 10s
+
+routes:
+  # amount range in route pool for each base intruments
+  range: [1, 2]
+
+  # using this step, decimals = 1000
+  step: 1
+
+prices:
+  loader:
+    # split requests to jupiter api
+    chunk_size: 99
 
 instruments:
   # tokens loader
@@ -96,25 +127,3 @@ instruments:
     # eth
     # - address: 7vfCXTUXx5WJV5JADk17DUJ4ksgau7utNKj4b963voxs
     #   tags: [route]
-
-routes:
-  # amount range in route pool for each base intruments
-  range: [1, 2]
-
-  # using this step, decimals = 1000
-  step: 1
-
-prices:
-  loader:
-    # split requests to jupiter api
-    chunk_size: 99
-
-server:
-  # check quotes concurrency
-  concurrency: 5
-
-  # block producer interval
-  ticker: 10s
-
-  # timeout deadline for group task
-  deadline: 10s

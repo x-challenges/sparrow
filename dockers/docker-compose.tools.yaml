@@ -1,14 +1,19 @@
-networks:
-  monitoring:
-    driver: bridge
-
 volumes:
   prometheus-storage: {}
   grafana-storage: {}
+  alloy-storage: {}
+
+networks:
+  monitoring: {}
 
 x-common: &common
+  env_file:
+    - path: ../.env
+      required: false
   profiles:
     - tools
+  networks:
+    - monitoring
 
 services:
   prometheus:
@@ -18,14 +23,12 @@ services:
     ports:
       - 9090:9090
     volumes:
-      - ./prometheus:/etc/prometheus
+      - ./monitoring:/etc/prometheus
       - prometheus-storage:/prometheus
     command:
-      - '--config.file=/etc/prometheus/config.yaml'
+      - '--config.file=/etc/prometheus/prom.config.yaml'
       - '--storage.tsdb.path=/prometheus'
       - '--storage.tsdb.retention.time=24h'
-    networks:
-      - monitoring
 
   grafana:
     << : [ *common ]
@@ -35,5 +38,18 @@ services:
       - 3000:3000
     volumes:
       - grafana-storage:/var/lib/grafana
-    networks:
-      - monitoring
+
+  alloy:
+    << : [ *common ]
+    image: grafana/alloy:v1.5.0
+    restart: always
+    ports:
+      - 12345:12345
+    volumes:
+      - ./monitoring/config.alloy:/etc/alloy/config.alloy
+      - alloy-storage:/var/lib/alloy/data
+    command:
+      - run
+      - --server.http.listen-addr=0.0.0.0:12345
+      - --storage.path=/var/lib/alloy/data
+      - /etc/alloy/config.alloy

@@ -1,5 +1,10 @@
- services:
+x-common: &common
+  profiles:
+    - jupiter
+
+services:
   jupiter:
+    << : [ *common ]
     image: cr.yandex/crp53e20ig6qqj16t4k5/jupiter:${IMAGE_TAG:-develop}
     build:
       context: ../.

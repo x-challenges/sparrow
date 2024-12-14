@@ -119,9 +119,11 @@ func (s *service) Start(ctx context.Context) error {
 	s.logger.Info("instruments loaded",
 		zap.Int("base", s.repository.Count(ctx, Base)),         // inputable
 		zap.Int("route", s.repository.Count(ctx, Route)),       // outputable
-		zap.Int("swap", s.repository.Count(ctx, Swap)),         // swappable
 		zap.Int("total", s.repository.Count(ctx, Unspecified)), // total
 	)
+
+	// metrics
+	instrumentsCounter.Add(ctx, int64(s.repository.Count(ctx, Unspecified)))
 
 	return nil
 }
