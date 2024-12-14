@@ -71,7 +71,7 @@ func (c *client) getRequest(ctx context.Context, host, getParams string, resp an
 	)
 
 	defer func() {
-		requestLatency.Record(ctx, int64(time.Since(started)), metric.WithAttributes(
+		requestLatency.Record(ctx, time.Since(started).Milliseconds(), metric.WithAttributes(
 			attribute.String("host", host),
 			attribute.Int("status_code", statusCode),
 		))
@@ -84,6 +84,7 @@ func (c *client) getRequest(ctx context.Context, host, getParams string, resp an
 	defer fasthttp.ReleaseResponse(res)
 
 	req.SetRequestURI(host + getParams)
+	req.Header.Set("Connection", "keep-alive")
 
 	// do request
 	if err = c.client.Do(req, res); err != nil {

@@ -17,3 +17,11 @@ services:
     env_file:
       - path: ../.env
         required: false
+    environment:
+      - PORT=8081
+    ulimits:
+      rtprio: 95
+      memlock: -1
+      nofile:
+        soft: 65536
+        hard: 65536

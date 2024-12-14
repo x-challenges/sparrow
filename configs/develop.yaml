@@ -17,13 +17,11 @@ ydb:
 fasthttp:
   client:
     host:
-      max_conns_per_host: 1024
-      max_conn_duration: 5m
+      max_conns_per_host: 1_024
+      max_conn_duration: 10m
       max_conn_wait_timeout: 5s
-      read_timeout: 1s
-      read_buffer_size: 4096
-      write_timeout: 1s
-      write_buffer_size: 4096
+      read_timeout: 5s
+      write_timeout: 5s
 
 jupiter:
   # token api
@@ -88,10 +86,6 @@ instruments:
     - address: EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v
       tags: [base, route]
 
-    # usdt
-    # - address: Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB
-    #   tags: [route]
-
     # me
     - address: MEFNBXixkEbait3xn9bkm8WsJzXtVsaJEn4c8Sam21u
       tags: [route]
@@ -115,6 +109,10 @@ instruments:
     # ray
     - address: 4k3Dyjzvzp8eMZWUXbBCjEvwSkkk59S5iCNLY3QrkX6R
       tags: [route]
+
+    # usdt
+    # - address: Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB
+    #   tags: [route]
 
     # usds
     # - address: USDSwr9ApdHk5bvJKMjzff41FfuX8bSxdKcR81vTwcA
